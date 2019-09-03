@@ -1,0 +1,31 @@
+{
+  "name": "react4u",
+  "version": "0.1.0",
+  "description": "Simple react server for data grids",
+  "main": "index.js",
+  "scripts": {
+    "example": "server4test",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/react": "^16.9.2",
+    "@types/react-dom": "^16.9.0",
+    "source-map-loader": "^0.2.4",
+    "ts-loader": "^6.0.4",
+    "typescript": "^3.6.2",
+    "webpack": "^4.39.3",
+    "webpack-cli": "^3.3.7",
+    "server4test": "^0.5.1",
+    "types.d.ts": "^0.4.8"
+  },
+  "dependencies": {
+    "ajax-best-promise": "^0.3.7",
+    "best-globals": "^0.10.22",
+    "like-ar": "^0.2.16",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0"
+  }
+}
