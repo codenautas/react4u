@@ -2,6 +2,12 @@ import * as React from "react";
 import {useState} from "react";
 import * as likeAr from "like-ar";
 
+type DataAtributos = {
+    atributo:string,
+    valorAnterior:string,
+    valor:string
+}
+
 type DataPrecio = {
     producto:string, 
     especificacion:string, 
@@ -9,6 +15,7 @@ type DataPrecio = {
     tipoPrecio:string|null, 
     precio:number|null,
     precioAnterior:number|null,
+    atributos:DataAtributos[],
 }
 
 var dataPreciosInicial:DataPrecio[] = [
@@ -19,6 +26,10 @@ var dataPreciosInicial:DataPrecio[] = [
         precioAnterior:120,
         tipoPrecio:null,
         precio:null,
+        atributos:[
+            {atributo:'Marca', valorAnterior:'La campagnola', valor:null},
+            {atributo:'Gramaje', valorAnterior:'300', valor:null}
+        ]
     },
     {
         producto:'Lata de arvejas',
@@ -27,6 +38,10 @@ var dataPreciosInicial:DataPrecio[] = [
         precioAnterior:140,
         tipoPrecio:null,
         precio:null,
+        atributos:[
+            {atributo:'Marca', valorAnterior:'La campagnola', valor:null},
+            {atributo:'Gramaje', valorAnterior:'300', valor:null}
+        ]
     },
     {
         producto:'Yerba',
@@ -35,21 +50,35 @@ var dataPreciosInicial:DataPrecio[] = [
         precioAnterior:null,
         tipoPrecio:null,
         precio:null,
+        atributos:[
+            {atributo:'Marca', valorAnterior:'Unión', valor:null},
+            {atributo:'Variante', valorAnterior:'Suave sin palo', valor:null},
+            {atributo:'Gramaje', valorAnterior:'500', valor:null}
+        ]
     },
 ]
 
 function PreciosRow(props:{dataPrecio:DataPrecio}){
     return (
-        <tr>
-            <td>
-                <div className="producto">{props.dataPrecio.producto}</div>
-                <div className="especificacion">{props.dataPrecio.especificacion}</div>
-            </td>
-            <td className="tipoPrecioAnterior">{props.dataPrecio.tipoPrecioAnterior}</td>
-            <td data-type="number" className="precioAnterior">{props.dataPrecio.precioAnterior}</td>
-            <td className="tipoPrecio">{props.dataPrecio.tipoPrecio}</td>
-            <td data-type="number" className="precio">{props.dataPrecio.precio}</td>
-        </tr>
+        <tbody>
+            <tr>
+                <td rowSpan={props.dataPrecio.atributos.length + 1}>
+                    <div className="producto">{props.dataPrecio.producto}</div>
+                    <div className="especificacion">{props.dataPrecio.especificacion}</div>
+                </td>
+                <td className="tipoPrecioAnterior">{props.dataPrecio.tipoPrecioAnterior}</td>
+                <td data-type="number" className="precioAnterior">{props.dataPrecio.precioAnterior}</td>
+                <td className="tipoPrecio">{props.dataPrecio.tipoPrecio}</td>
+                <td data-type="number" className="precio">{props.dataPrecio.precio}</td>
+            </tr>
+            {props.dataPrecio.atributos.map((atributo)=>
+                <tr>
+                    <td>{atributo.atributo}</td>
+                    <td>{atributo.valorAnterior}</td>
+                    <td colSpan={2}>{atributo.valor}</td>
+                </tr>
+            )}
+        </tbody>
     );
 }
 
@@ -71,11 +100,9 @@ export function PruebaRelevamientoPrecios(){
                     <th>precio</th>
                 </tr>
             </thead>
-            <tbody>
-                {dataPrecios.map((dataPrecio,index) =>
-                    <PreciosRow key={index} dataPrecio={dataPrecio}></PreciosRow>
-                )}
-            </tbody>
+            {dataPrecios.map((dataPrecio,index) =>
+                <PreciosRow key={index} dataPrecio={dataPrecio}></PreciosRow>
+            )}
         </table>
     );
 }
