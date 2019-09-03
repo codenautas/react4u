@@ -3,7 +3,7 @@ import {useState} from "react";
 import {changing} from "best-globals";
 import * as likeAr from "like-ar";
 
-type DataAtributos = {
+type DataAtributo = {
     atributo:string,
     valorAnterior:string,
     valor:string
@@ -16,7 +16,7 @@ type DataPrecio = {
     tipoPrecio:string|null, 
     precio:number|null,
     precioAnterior:number|null,
-    atributos:DataAtributos[],
+    atributos:DataAtributo[],
 }
 
 var dataPreciosInicialCorto:DataPrecio[] = [
@@ -65,6 +65,29 @@ while(dataPreciosInicial.length<100){
     dataPreciosInicial.push(changing(dataPreciosInicialCorto[Math.floor(Math.random()*3)],{}));
 }
 
+function AtributosRow(props:{dataAtributo:DataAtributo, primerAtributo:boolean, cantidadAtributos:number, onUpdate:(modifAtributo:DataAtributo)}){
+    const atributo = props.dataAtributo;
+    const [editando, setEditando] = useState(false);
+    return (
+        <tr>
+            <td>{atributo.atributo}</td>
+            <td colSpan={2}>{atributo.valorAnterior}</td>
+            {props.primerAtributo?<td rowSpan={props.cantidadAtributos} className="flechaAtributos">→</td>:null}
+            <td colSpan={2} onClick={
+                ()=>setEditando(true)
+            }>{editando?
+                <input value={atributo.valor} onBlur={(event)=>{
+                    atributo.valor=event.target.value;
+                    setEditando(false)
+                    props.onUpdate(atributo);
+                }}/>
+                :atributo.valor
+            }</td>
+        </tr>
+
+    )
+}
+
 function PreciosRow(props:{dataPrecio:DataPrecio, onUpdate:(dataPrecio:DataPrecio)=>void}){
     return (
         <tbody>
@@ -87,12 +110,15 @@ function PreciosRow(props:{dataPrecio:DataPrecio, onUpdate:(dataPrecio:DataPreci
                 <td data-type="number" className="precio">{props.dataPrecio.precio}</td>
             </tr>
             {props.dataPrecio.atributos.map((atributo,index)=>
-                <tr>
-                    <td>{atributo.atributo}</td>
-                    <td colSpan={2}>{atributo.valorAnterior}</td>
-                    {index==0?<td rowSpan={props.dataPrecio.atributos.length} className="flechaAtributos">→</td>:null}
-                    <td colSpan={2}>{atributo.valor}</td>
-                </tr>
+                <AtributosRow key={index}
+                    dataAtributo={atributo}
+                    primerAtributo={index==0}
+                    cantidadAtributos={props.dataPrecio.atributos.length}
+                    onUpdate={(modifAtributo)=>{
+                        props.dataPrecio.atributos.splice(index,1,modifAtributo);
+                        props.onUpdate(props.dataPrecio);
+                    }}
+                />
             )}
         </tbody>
     );
