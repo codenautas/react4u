@@ -1,5 +1,6 @@
 import * as React from "react";
 import {useState} from "react";
+import {changing} from "best-globals";
 import * as likeAr from "like-ar";
 
 type DataAtributos = {
@@ -18,14 +19,14 @@ type DataPrecio = {
     atributos:DataAtributos[],
 }
 
-var dataPreciosInicial:DataPrecio[] = [
+var dataPreciosInicialCorto:DataPrecio[] = [
     {
         producto:'Lata de tomate',
         especificacion:'Lata de tomate perita enteros pelado de 120 a 140g neto',
         tipoPrecioAnterior:'P',
         precioAnterior:120,
-        tipoPrecio:null,
-        precio:null,
+        tipoPrecio:'O',
+        precio:130,
         atributos:[
             {atributo:'Marca', valorAnterior:'La campagnola', valor:null},
             {atributo:'Gramaje', valorAnterior:'300', valor:null}
@@ -56,9 +57,15 @@ var dataPreciosInicial:DataPrecio[] = [
             {atributo:'Gramaje', valorAnterior:'500', valor:null}
         ]
     },
-]
+];
 
-function PreciosRow(props:{dataPrecio:DataPrecio}){
+var dataPreciosInicial=dataPreciosInicialCorto;
+
+while(dataPreciosInicial.length<100){
+    dataPreciosInicial.push(changing(dataPreciosInicialCorto[Math.floor(Math.random()*3)],{}));
+}
+
+function PreciosRow(props:{dataPrecio:DataPrecio, onUpdate:(dataPrecio:DataPrecio)=>void}){
     return (
         <tbody>
             <tr>
@@ -69,7 +76,13 @@ function PreciosRow(props:{dataPrecio:DataPrecio}){
                 <td className="observaiones"><button>Obs.</button></td>
                 <td className="tipoPrecioAnterior">{props.dataPrecio.tipoPrecioAnterior}</td>
                 <td data-type="number" className="precioAnterior">{props.dataPrecio.precioAnterior}</td>
-                <td className="flechaTP">→</td>
+                { props.dataPrecio.tipoPrecio==null && props.dataPrecio.tipoPrecioAnterior!=null ?
+                    <td className="flechaTP" onClick={ () => {
+                        props.dataPrecio.tipoPrecio = props.dataPrecio.tipoPrecioAnterior;
+                        props.onUpdate(props.dataPrecio);
+                    }}>→</td>
+                    :<td className="flechaTP"></td>
+                }
                 <td className="tipoPrecio">{props.dataPrecio.tipoPrecio}</td>
                 <td data-type="number" className="precio">{props.dataPrecio.precio}</td>
             </tr>
@@ -106,7 +119,9 @@ export function PruebaRelevamientoPrecios(){
                 </tr>
             </thead>
             {dataPrecios.map((dataPrecio,index) =>
-                <PreciosRow key={index} dataPrecio={dataPrecio}></PreciosRow>
+                <PreciosRow key={index} dataPrecio={dataPrecio} onUpdate={
+                    (updatedPrecio)=>setDataPrecios(dataPrecios.slice(0,index).concat([updatedPrecio]).concat(dataPrecios.slice(index+1)))
+                }></PreciosRow>
             )}
         </table>
     );
