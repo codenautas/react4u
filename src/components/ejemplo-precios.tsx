@@ -66,15 +66,18 @@ function PreciosRow(props:{dataPrecio:DataPrecio}){
                     <div className="producto">{props.dataPrecio.producto}</div>
                     <div className="especificacion">{props.dataPrecio.especificacion}</div>
                 </td>
+                <td className="observaiones"><button>Obs.</button></td>
                 <td className="tipoPrecioAnterior">{props.dataPrecio.tipoPrecioAnterior}</td>
                 <td data-type="number" className="precioAnterior">{props.dataPrecio.precioAnterior}</td>
+                <td className="flechaTP">→</td>
                 <td className="tipoPrecio">{props.dataPrecio.tipoPrecio}</td>
                 <td data-type="number" className="precio">{props.dataPrecio.precio}</td>
             </tr>
-            {props.dataPrecio.atributos.map((atributo)=>
+            {props.dataPrecio.atributos.map((atributo,index)=>
                 <tr>
                     <td>{atributo.atributo}</td>
-                    <td>{atributo.valorAnterior}</td>
+                    <td colSpan={2}>{atributo.valorAnterior}</td>
+                    {index==0?<td rowSpan={props.dataPrecio.atributos.length} className="flechaAtributos">→</td>:null}
                     <td colSpan={2}>{atributo.valor}</td>
                 </tr>
             )}
@@ -89,8 +92,10 @@ export function PruebaRelevamientoPrecios(){
             <caption>Formulario X</caption>
             <thead>
                 <tr>
-                    <th rowSpan={2}>producto/especificación</th>
+                    <th rowSpan={2}>producto<br/>especificación</th>
+                    <th rowSpan={2}>obs.<br/>atributos</th>
                     <th colSpan={2}>anterior</th>
+                    <td rowSpan={2} className="flechaTitulos"></td>
                     <th colSpan={2}>actual</th>
                 </tr>
                 <tr>
