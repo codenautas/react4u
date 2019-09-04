@@ -17,6 +17,7 @@ type DataPrecio = {
     precio:number|null,
     precioAnterior:number|null,
     atributos:DataAtributo[],
+    cambio:string|null
 }
 
 var dataPreciosInicialCorto:DataPrecio[] = [
@@ -30,7 +31,8 @@ var dataPreciosInicialCorto:DataPrecio[] = [
         atributos:[
             {atributo:'Marca', valorAnterior:'La campagnola', valor:null},
             {atributo:'Gramaje', valorAnterior:'300', valor:null}
-        ]
+        ],
+        cambio: null
     },
     {
         producto:'Lata de arvejas',
@@ -42,7 +44,8 @@ var dataPreciosInicialCorto:DataPrecio[] = [
         atributos:[
             {atributo:'Marca', valorAnterior:'La campagnola', valor:null},
             {atributo:'Gramaje', valorAnterior:'300', valor:null}
-        ]
+        ],
+        cambio: null
     },
     {
         producto:'Yerba',
@@ -55,7 +58,8 @@ var dataPreciosInicialCorto:DataPrecio[] = [
             {atributo:'Marca', valorAnterior:'Unión', valor:null},
             {atributo:'Variante', valorAnterior:'Suave sin palo', valor:null},
             {atributo:'Gramaje', valorAnterior:'500', valor:null}
-        ]
+        ],
+        cambio: null
     },
     {
         producto:'Leche entera en sachet',
@@ -66,7 +70,8 @@ var dataPreciosInicialCorto:DataPrecio[] = [
         precio:57.75,
         atributos:[
             {atributo:'Marca', valorAnterior:'Sancor', valor:'Sancor'},
-        ]
+        ],
+        cambio: null
     },
     {
         producto:'Dulce de leche',
@@ -80,7 +85,8 @@ var dataPreciosInicialCorto:DataPrecio[] = [
             {atributo:'Variante', valorAnterior:'Repostero', valor:null},
             {atributo:'Gramaje' , valorAnterior:'500g', valor:null},
             {atributo:'Envase'  , valorAnterior:'Plástico', valor:null},
-        ]
+        ],
+        cambio: null
     },
 ];
 
@@ -159,10 +165,13 @@ function EditableTd<T>(props:{
 
 function AtributosRow(props:{
     dataAtributo:DataAtributo, 
+    cambio:string|null,
     primerAtributo:boolean, 
     cantidadAtributos:number, 
     startEditing:boolean, 
     onUpdate:OnUpdate<DataAtributo>, 
+    onCopiarAtributos:()=>void,
+    onMarcarCambio:()=>void,
     onWantToMoveForward?:()=>void}
 ){
     const atributo = props.dataAtributo;
@@ -170,9 +179,16 @@ function AtributosRow(props:{
         <tr>
             <td>{atributo.atributo}</td>
             <td colSpan={2} className="atributo-anterior" >{atributo.valorAnterior}</td>
-            {props.primerAtributo?<td rowSpan={props.cantidadAtributos} className="flechaAtributos">→</td>:null}
+            {props.primerAtributo?
+                <td rowSpan={props.cantidadAtributos} className="flechaAtributos" onClick={ () => {
+                    props.onCopiarAtributos()
+                }}>{props.cambio==null?'→':props.cambio}</td>
+                :null}
             <EditableTd colSpan={2} className="atributo-actual" value={atributo.valor} onUpdate={value=>{
                 atributo.valor=value;
+                if(atributo.valor!=atributo.valorAnterior){
+                    props.onMarcarCambio();
+                }
                 props.onUpdate(atributo);
             }} onWantToMoveForward={props.onWantToMoveForward}
             startEditing={props.startEditing} />
@@ -185,6 +201,7 @@ function PreciosRow(props:{
     onUpdate:OnUpdate<DataPrecio>
 }){
     const [editandoAtributo,setEditandoAtributo] = useState(null);
+    const [editandoPrecio,setEditandoPrecio] = useState(null);
     return (
         <tbody>
             <tr>
@@ -205,17 +222,38 @@ function PreciosRow(props:{
                 <td className="tipoPrecio">{props.dataPrecio.tipoPrecio}</td>
                 <EditableTd className="precio" value={props.dataPrecio.precio} onUpdate={value=>{
                     props.dataPrecio.precio=value;
+                    if(!props.dataPrecio.tipoPrecio && props.dataPrecio.precio){
+                        props.dataPrecio.tipoPrecio='P';
+                    }
                     props.onUpdate(props.dataPrecio);
-                }}/>
+                    setEditandoPrecio(false)
+                }} startEditing={editandoPrecio}/>
             </tr>
             {props.dataPrecio.atributos.map((atributo,index)=>
                 <AtributosRow key={index}
                     dataAtributo={atributo}
                     primerAtributo={index==0}
+                    cambio={props.dataPrecio.cambio}
                     cantidadAtributos={props.dataPrecio.atributos.length}
                     onUpdate={(modifAtributo)=>{
                         props.dataPrecio.atributos.splice(index,1,modifAtributo);
                         props.onUpdate(props.dataPrecio);
+                        
+                    }}
+                    onCopiarAtributos={()=>{
+                        if(props.dataPrecio.cambio==null){
+                            props.dataPrecio.atributos.forEach((atrib)=>
+                                atrib.valor = atrib.valorAnterior
+                            )
+                            props.dataPrecio.cambio='=';
+                            if(!props.dataPrecio.precio){
+                                setEditandoPrecio(true)
+                            }
+                            props.onUpdate(props.dataPrecio);
+                        }
+                    }}
+                    onMarcarCambio={()=>{
+                        props.dataPrecio.cambio='C';
                     }}
                     onWantToMoveForward={()=>{
                         setEditandoAtributo(index+1);
