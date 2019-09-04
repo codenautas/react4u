@@ -1,5 +1,5 @@
 import * as React from "react";
-import {useState, useRef} from "react";
+import {useState, useRef, useEffect} from "react";
 import {changing} from "best-globals";
 import * as likeAr from "like-ar";
 
@@ -68,13 +68,16 @@ while(dataPreciosInicial.length<100){
 type OnUpdate<T> = (data:T)=>void
 
 function InputText(props:{value:string, onUpdate:OnUpdate<string>, onFocusOut:()=>void}){
-    const esto = useRef(null);
+    const ref = useRef(null);
+    useEffect(() => {
+        ref.current.focus();
+    }, []);
     return (
-        <input ref={esto} value={props.value} onBlur={(event)=>{
+        <input ref={ref} value={props.value} onBlur={(event)=>{
             props.onUpdate(event.target.value);
             props.onFocusOut();
         }} onMouseOut={()=>{
-            if(document.activeElement!=esto.current){
+            if(document.activeElement!=ref.current){
                 props.onFocusOut();
             }
         }}/>
