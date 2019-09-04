@@ -192,9 +192,7 @@ const AtributosRow = forwardRef(function(props:{
                 :null}
             <EditableTd colSpan={2} className="atributo-actual" value={atributo.valor} onUpdate={value=>{
                 atributo.valor=value;
-                if(atributo.valor!=atributo.valorAnterior){
-                    props.onMarcarCambio();
-                }
+                props.onMarcarCambio();
                 props.onUpdate(atributo);
             }} onWantToMoveForward={props.onWantToMoveForward}
             ref={ref} />
@@ -260,7 +258,10 @@ function PreciosRow(props:{
                         }
                     }}
                     onMarcarCambio={()=>{
-                        props.dataPrecio.cambio='C';
+                        let atributosIguales = props.dataPrecio.atributos.filter((atrib)=>
+                            atrib.valorAnterior == atrib.valor
+                        );
+                        props.dataPrecio.cambio=(atributosIguales.length == props.dataPrecio.atributos.length)?'=':'C';
                     }}
                     onWantToMoveForward={()=>{
                         if(index<props.dataPrecio.atributos.length){
