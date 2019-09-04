@@ -10,6 +10,7 @@ ReactDOM.render(
     <React.StrictMode>
         <SaludoInicial mensaje="React is 4 U!" appName="react4u"/>
         <PruebaRelevamientoPrecios/>,
+        <ProbarFormularioEncuesta/>,
     </React.StrictMode>,
     document.getElementById("main_layout")
 )

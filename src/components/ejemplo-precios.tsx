@@ -116,8 +116,10 @@ function TypedInput<T>(props:{
             // @ts-ignore Tengo que averiguar cómo hacer esto genérico:
             setValue(event.target.value);
         }} onBlur={(event)=>{
-            // @ts-ignore Tengo que averiguar cómo hacer esto genérico:
-            props.onUpdate(event.target.value);
+            if(value!=props.value){
+                // @ts-ignore Tengo que averiguar cómo hacer esto genérico:
+                props.onUpdate(event.target.value);
+            }
             props.onFocusOut();
         }} onMouseOut={()=>{
             if(document.activeElement!=ref.current){

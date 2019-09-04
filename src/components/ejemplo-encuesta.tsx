@@ -101,7 +101,7 @@ function RowPregunta(props:{pregunta:Pregunta}){
     )
 }
 
-export function ProbarFormularioEncuesta(props:{mensaje:string, appName:string}){
+export function ProbarFormularioEncuesta(props:{}){
     return (
         <table className="ejemplo-encuesta">
             <caption>Formulario Encuesta</caption>
