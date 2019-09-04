@@ -74,13 +74,13 @@ var estructura:Pregunta[]=[{
 
 export function ProbarFormularioEncuesta(props:{mensaje:string, appName:string}){
     return (
-        <table>
+        <table className="ejemplo-encuesta">
             <caption>Formulario Encuesta</caption>
             <tbody>
                 {estructura.map(pregunta=>
                     <tr>
-                        <td>{pregunta.id}</td>
-                        <td>{pregunta.texto}</td>
+                        <td className="pregunta-id"><div>{pregunta.id}</div></td>
+                        <td className="pregunta-texto">{pregunta.texto}</td>
                     </tr>
                 )}
             </tbody>
