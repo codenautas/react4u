@@ -57,12 +57,37 @@ var dataPreciosInicialCorto:DataPrecio[] = [
             {atributo:'Gramaje', valorAnterior:'500', valor:null}
         ]
     },
+    {
+        producto:'Leche entera en sachet',
+        especificacion:'Leche entera en sachet de 1 litro sin adhitivos ni vitaminas',
+        tipoPrecioAnterior:'P',
+        precioAnterior:56,
+        tipoPrecio:'P',
+        precio:57.75,
+        atributos:[
+            {atributo:'Marca', valorAnterior:'Sancor', valor:'Sancor'},
+        ]
+    },
+    {
+        producto:'Dulce de leche',
+        especificacion:'Dulce de leche en envase de 300g a 550g. Excluir mezclas especiales y marcas premium',
+        tipoPrecioAnterior:'P',
+        precioAnterior:98.40,
+        tipoPrecio:'P',
+        precio:57.75,
+        atributos:[
+            {atributo:'Marca'   , valorAnterior:'Sancor', valor:null},
+            {atributo:'Variante', valorAnterior:'Repostero', valor:null},
+            {atributo:'Gramaje' , valorAnterior:'500g', valor:null},
+            {atributo:'Envase'  , valorAnterior:'Plástico', valor:null},
+        ]
+    },
 ];
 
-var dataPreciosInicial=dataPreciosInicialCorto;
+var dataPreciosInicial=[...dataPreciosInicialCorto];
 
 while(dataPreciosInicial.length<100){
-    dataPreciosInicial.push(changing(dataPreciosInicialCorto[Math.floor(Math.random()*3)],{}));
+    dataPreciosInicial.push(changing(dataPreciosInicialCorto[Math.floor(Math.random()*dataPreciosInicialCorto.length)],{}));
 }
 
 type OnUpdate<T> = (data:T)=>void
@@ -127,7 +152,7 @@ function PreciosRow(props:{dataPrecio:DataPrecio, onUpdate:OnUpdate<DataPrecio>}
     return (
         <tbody>
             <tr>
-                <td rowSpan={props.dataPrecio.atributos.length + 1}>
+                <td className="col-prod-esp" rowSpan={props.dataPrecio.atributos.length + 1}>
                     <div className="producto">{props.dataPrecio.producto}</div>
                     <div className="especificacion">{props.dataPrecio.especificacion}</div>
                 </td>
@@ -184,7 +209,7 @@ export function PruebaRelevamientoPrecios(){
             </thead>
             {dataPrecios.map((dataPrecio,index) =>
                 <PreciosRow key={index} dataPrecio={dataPrecio} onUpdate={
-                    (updatedPrecio)=>setDataPrecios(dataPrecios.slice(0,index).concat([updatedPrecio]).concat(dataPrecios.slice(index+1)))
+                    (updatedPrecio)=>setDataPrecios([...dataPrecios.slice(0,index), updatedPrecio, ...dataPrecios.slice(index+1)])
                 }></PreciosRow>
             )}
         </table>

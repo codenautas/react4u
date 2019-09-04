@@ -6,9 +6,9 @@ import { PruebaRelevamientoPrecios } from "./components/ejemplo-precios";
 
 
 ReactDOM.render(
-    <div>
+    <React.StrictMode>
         <SaludoInicial mensaje="React is 4 U!" appName="react4u"></SaludoInicial>
         <PruebaRelevamientoPrecios></PruebaRelevamientoPrecios>
-    </div>,
+    </React.StrictMode>,
     document.getElementById("main_layout")
 )
