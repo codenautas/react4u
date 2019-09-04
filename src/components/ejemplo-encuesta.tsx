@@ -78,7 +78,7 @@ export function ProbarFormularioEncuesta(props:{mensaje:string, appName:string})
             <caption>Formulario Encuesta</caption>
             <tbody>
                 {estructura.map(pregunta=>
-                    <tr>
+                    <tr key={pregunta.id}>
                         <td className="pregunta-id"><div>{pregunta.id}</div></td>
                         <td className="pregunta-texto">{pregunta.texto}</td>
                     </tr>
