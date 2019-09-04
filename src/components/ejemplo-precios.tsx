@@ -92,14 +92,14 @@ while(dataPreciosInicial.length<100){
 
 type OnUpdate<T> = (data:T)=>void
 
-function TypedInput<T>(props:{value:T, onUpdate:OnUpdate<T>, onFocusOut:()=>void}){
+function TypedInput<T>(props:{value:T, onUpdate:OnUpdate<T>, onFocusOut:()=>void, onWantToMoveForward?:()=>void}){
     var [value, setValue] = useState(props.value);
     const ref = useRef(null);
     useEffect(() => {
         ref.current.focus();
     }, []);
     // @ts-ignore acá hay un problema con el cambio de tipos
-    var valueString:string = value;
+    var valueString:string = value==null?'':value;
     return (
         <input ref={ref} value={valueString} onChange={(event)=>{
             // @ts-ignore Tengo que averiguar cómo hacer esto genérico:
@@ -112,12 +112,25 @@ function TypedInput<T>(props:{value:T, onUpdate:OnUpdate<T>, onFocusOut:()=>void
             if(document.activeElement!=ref.current){
                 props.onFocusOut();
             }
+        }} onKeyPress={event=>{
+            var tecla = event.charCode || event.which;
+            if((tecla==13 || tecla==9) && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey){
+                if(props.onWantToMoveForward){
+                    props.onWantToMoveForward();
+                    event.preventDefault();
+                }
+            }
         }}/>
     )
 }
 
-function EditableTd<T>(props:{colSpan?:number, rowSpan?:number, className?:string, value:T, onUpdate:OnUpdate<T>}){
+function EditableTd<T>(props:{colSpan?:number, rowSpan?:number, className?:string, value:T, onUpdate:OnUpdate<T>, onWantToMoveForward?:()=>void, startEditing:boolean}){
     const [editando, setEditando] = useState(false);
+    useEffect(()=>{
+        if(props.startEditing){
+            setEditando(true)
+        }
+    });
     return (
         <td colSpan={props.colSpan} rowSpan={props.rowSpan} className={props.className} onClick={
             ()=>setEditando(true)
@@ -127,28 +140,34 @@ function EditableTd<T>(props:{colSpan?:number, rowSpan?:number, className?:strin
                     props.onUpdate(value);
                 }} onFocusOut={()=>{
                     setEditando(false);
-                }}/>
+                }} onWantToMoveForward={props.onWantToMoveForward}/>
             :<div>{props.value}</div>}
         </td>
     )
 }
 
-function AtributosRow(props:{dataAtributo:DataAtributo, primerAtributo:boolean, cantidadAtributos:number, onUpdate:OnUpdate<DataAtributo>}){
+function AtributosRow(props:{dataAtributo:DataAtributo, primerAtributo:boolean, cantidadAtributos:number, onUpdate:OnUpdate<DataAtributo>, onWantToMoveForward?:()=>void, startEditing:boolean}){
     const atributo = props.dataAtributo;
     return (
-        <tr>
+        <tr
+            style={{
+                backgroundColor:props.startEditing?'yellow':'cyan'
+            }}
+        >
             <td>{atributo.atributo}</td>
             <td colSpan={2} className="atributo-anterior" >{atributo.valorAnterior}</td>
             {props.primerAtributo?<td rowSpan={props.cantidadAtributos} className="flechaAtributos">→</td>:null}
             <EditableTd colSpan={2} className="atributo-actual" value={atributo.valor} onUpdate={value=>{
                 atributo.valor=value;
                 props.onUpdate(atributo);
-            }}/>
+            }} onWantToMoveForward={props.onWantToMoveForward}
+            startEditing={props.startEditing} />
         </tr>
     )
 }
 
 function PreciosRow(props:{dataPrecio:DataPrecio, onUpdate:OnUpdate<DataPrecio>}){
+    const [editandoAtributo,setEditandoAtributo] = useState(null);
     return (
         <tbody>
             <tr>
@@ -181,6 +200,10 @@ function PreciosRow(props:{dataPrecio:DataPrecio, onUpdate:OnUpdate<DataPrecio>}
                         props.dataPrecio.atributos.splice(index,1,modifAtributo);
                         props.onUpdate(props.dataPrecio);
                     }}
+                    onWantToMoveForward={()=>{
+                        setEditandoAtributo(index+1);
+                    }}
+                    startEditing={editandoAtributo!=null && editandoAtributo==index}
                 />
             )}
         </tbody>
