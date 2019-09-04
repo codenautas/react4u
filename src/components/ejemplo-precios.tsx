@@ -1,5 +1,5 @@
 import * as React from "react";
-import {useState} from "react";
+import {useState, useRef} from "react";
 import {changing} from "best-globals";
 import * as likeAr from "like-ar";
 
@@ -67,30 +67,48 @@ while(dataPreciosInicial.length<100){
 
 type OnUpdate<T> = (data:T)=>void
 
-function InputText(props:{value:string, onUpdate:OnUpdate<string>}){
+function InputText(props:{value:string, onUpdate:OnUpdate<string>, onFocusOut:()=>void}){
+    const esto = useRef(null);
     return (
-        <input value={props.value} onBlur={(event)=>{
+        <input ref={esto} value={props.value} onBlur={(event)=>{
             props.onUpdate(event.target.value);
+            props.onFocusOut();
+        }} onMouseOut={()=>{
+            if(document.activeElement!=esto.current){
+                props.onFocusOut();
+            }
         }}/>
+    )
+}
+
+function EditableTd(props:{colSpan?:number, rowSpan?:number, className?:string, value:string, onUpdate:OnUpdate<string>}){
+    const [editando, setEditando] = useState(false);
+    return (
+        <td colSpan={props.colSpan} rowSpan={props.rowSpan} className={props.className} onClick={
+            ()=>setEditando(true)
+        }>
+            {editando?
+                <InputText value={props.value} onUpdate={value =>{
+                    props.onUpdate(value);
+                }} onFocusOut={()=>{
+                    setEditando(false);
+                }}/>
+            :props.value}
+        </td>
     )
 }
 
 function AtributosRow(props:{dataAtributo:DataAtributo, primerAtributo:boolean, cantidadAtributos:number, onUpdate:(modifAtributo:DataAtributo)=>void}){
     const atributo = props.dataAtributo;
-    const [editando, setEditando] = useState(false);
     return (
         <tr>
             <td>{atributo.atributo}</td>
             <td colSpan={2} className="atributo-anterior" >{atributo.valorAnterior}</td>
             {props.primerAtributo?<td rowSpan={props.cantidadAtributos} className="flechaAtributos">→</td>:null}
-            <td colSpan={2} className="atributo-actual" onClick={
-                ()=>setEditando(true)
-            }>{editando?<InputText value={atributo.valor} onUpdate={ value => {
+            <EditableTd colSpan={2} className="atributo-actual" value={atributo.valor} onUpdate={value=>{
                 atributo.valor=value;
-                setEditando(false)
                 props.onUpdate(atributo);
-            }}/>:atributo.valor
-            }</td>
+            }}/>
         </tr>
     )
 }
