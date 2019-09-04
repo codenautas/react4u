@@ -71,6 +71,35 @@ var estructura:Pregunta[]=[{
     aclaracion:'En el caso de tener más de un empleo, verifique que no haya trabajado en ninguno durante la semana pasada'
 }]
 
+function RowOpciones(props:{opcion:Opciones}){
+    return (
+        <tr>
+            <td>{props.opcion.opcion}</td>
+            <td>{props.opcion.texto}</td>
+            <td>{props.opcion.salto}</td>
+        </tr>
+    )
+}
+
+function RowPregunta(props:{pregunta:Pregunta}){
+    const pregunta = props.pregunta;
+    return (
+        <tr>
+            <td className="pregunta-id"><div>{pregunta.id}</div></td>
+            <td className="pregunta-box">
+                <div className="pregunta-texto">{pregunta.texto}</div>
+                {pregunta.aclaracion?
+                    <div className="pregunta-aclaracion">{pregunta.aclaracion}</div>
+                :null}
+                {pregunta.opciones?
+                    <table>{pregunta.opciones.map(opcion=>
+                        <RowOpciones key={opcion.opcion} opcion={opcion}/>
+                    )}</table>
+                :null}
+            </td>
+        </tr>
+    )
+}
 
 export function ProbarFormularioEncuesta(props:{mensaje:string, appName:string}){
     return (
@@ -78,15 +107,7 @@ export function ProbarFormularioEncuesta(props:{mensaje:string, appName:string})
             <caption>Formulario Encuesta</caption>
             <tbody>
                 {estructura.map(pregunta=>
-                    <tr key={pregunta.id}>
-                        <td className="pregunta-id"><div>{pregunta.id}</div></td>
-                        <td className="pregunta-box">
-                            <div className="pregunta-texto">{pregunta.texto}</div>
-                            {pregunta.aclaracion?
-                                <div className="pregunta-aclaracion">{pregunta.aclaracion}</div>
-                            :null}
-                        </td>
-                    </tr>
+                    <RowPregunta key={pregunta.id} pregunta={pregunta} />
                 )}
             </tbody>
         </table>
