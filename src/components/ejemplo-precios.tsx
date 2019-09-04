@@ -67,13 +67,20 @@ while(dataPreciosInicial.length<100){
 
 type OnUpdate<T> = (data:T)=>void
 
-function InputText(props:{value:string, onUpdate:OnUpdate<string>, onFocusOut:()=>void}){
+function TypedInput<T>(props:{value:T, onUpdate:OnUpdate<T>, onFocusOut:()=>void}){
+    var [value, setValue] = useState(props.value);
     const ref = useRef(null);
     useEffect(() => {
         ref.current.focus();
     }, []);
+    // @ts-ignore acá hay un problema con el cambio de tipos
+    var valueString:string = value;
     return (
-        <input ref={ref} value={props.value} onBlur={(event)=>{
+        <input ref={ref} value={valueString} onChange={(event)=>{
+            // @ts-ignore Tengo que averiguar cómo hacer esto genérico:
+            setValue(event.target.value);
+        }} onBlur={(event)=>{
+            // @ts-ignore Tengo que averiguar cómo hacer esto genérico:
             props.onUpdate(event.target.value);
             props.onFocusOut();
         }} onMouseOut={()=>{
@@ -84,24 +91,24 @@ function InputText(props:{value:string, onUpdate:OnUpdate<string>, onFocusOut:()
     )
 }
 
-function EditableTd(props:{colSpan?:number, rowSpan?:number, className?:string, value:string, onUpdate:OnUpdate<string>}){
+function EditableTd<T>(props:{colSpan?:number, rowSpan?:number, className?:string, value:T, onUpdate:OnUpdate<T>}){
     const [editando, setEditando] = useState(false);
     return (
         <td colSpan={props.colSpan} rowSpan={props.rowSpan} className={props.className} onClick={
             ()=>setEditando(true)
         }>
             {editando?
-                <InputText value={props.value} onUpdate={value =>{
+                <TypedInput value={props.value} onUpdate={value =>{
                     props.onUpdate(value);
                 }} onFocusOut={()=>{
                     setEditando(false);
                 }}/>
-            :props.value}
+            :<div>{props.value}</div>}
         </td>
     )
 }
 
-function AtributosRow(props:{dataAtributo:DataAtributo, primerAtributo:boolean, cantidadAtributos:number, onUpdate:(modifAtributo:DataAtributo)=>void}){
+function AtributosRow(props:{dataAtributo:DataAtributo, primerAtributo:boolean, cantidadAtributos:number, onUpdate:OnUpdate<DataAtributo>}){
     const atributo = props.dataAtributo;
     return (
         <tr>
@@ -116,7 +123,7 @@ function AtributosRow(props:{dataAtributo:DataAtributo, primerAtributo:boolean, 
     )
 }
 
-function PreciosRow(props:{dataPrecio:DataPrecio, onUpdate:(dataPrecio:DataPrecio)=>void}){
+function PreciosRow(props:{dataPrecio:DataPrecio, onUpdate:OnUpdate<DataPrecio>}){
     return (
         <tbody>
             <tr>
@@ -135,7 +142,10 @@ function PreciosRow(props:{dataPrecio:DataPrecio, onUpdate:(dataPrecio:DataPreci
                     :<td className="flechaTP"></td>
                 }
                 <td className="tipoPrecio">{props.dataPrecio.tipoPrecio}</td>
-                <td data-type="number" className="precio">{props.dataPrecio.precio}</td>
+                <EditableTd data-type="number" className="precio" value={props.dataPrecio.precio} onUpdate={value=>{
+                    props.dataPrecio.precio=value;
+                    props.onUpdate(props.dataPrecio);
+                }}/>
             </tr>
             {props.dataPrecio.atributos.map((atributo,index)=>
                 <AtributosRow key={index}
