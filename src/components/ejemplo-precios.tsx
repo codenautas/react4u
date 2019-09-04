@@ -92,7 +92,12 @@ while(dataPreciosInicial.length<100){
 
 type OnUpdate<T> = (data:T)=>void
 
-function TypedInput<T>(props:{value:T, onUpdate:OnUpdate<T>, onFocusOut:()=>void, onWantToMoveForward?:()=>void}){
+function TypedInput<T>(props:{
+    value:T, 
+    onUpdate:OnUpdate<T>, 
+    onFocusOut:()=>void, 
+    onWantToMoveForward?:()=>void
+}){
     var [value, setValue] = useState(props.value);
     const ref = useRef(null);
     useEffect(() => {
@@ -124,7 +129,13 @@ function TypedInput<T>(props:{value:T, onUpdate:OnUpdate<T>, onFocusOut:()=>void
     )
 }
 
-function EditableTd<T>(props:{colSpan?:number, rowSpan?:number, className?:string, value:T, onUpdate:OnUpdate<T>, onWantToMoveForward?:()=>void, startEditing:boolean}){
+function EditableTd<T>(props:{
+    value:T, 
+    startEditing?:boolean,
+    className?:string, colSpan?:number, rowSpan?:number, 
+    onUpdate:OnUpdate<T>, 
+    onWantToMoveForward?:()=>void
+}){
     const [editando, setEditando] = useState(false);
     useEffect(()=>{
         if(props.startEditing){
@@ -146,14 +157,17 @@ function EditableTd<T>(props:{colSpan?:number, rowSpan?:number, className?:strin
     )
 }
 
-function AtributosRow(props:{dataAtributo:DataAtributo, primerAtributo:boolean, cantidadAtributos:number, onUpdate:OnUpdate<DataAtributo>, onWantToMoveForward?:()=>void, startEditing:boolean}){
+function AtributosRow(props:{
+    dataAtributo:DataAtributo, 
+    primerAtributo:boolean, 
+    cantidadAtributos:number, 
+    startEditing:boolean, 
+    onUpdate:OnUpdate<DataAtributo>, 
+    onWantToMoveForward?:()=>void}
+){
     const atributo = props.dataAtributo;
     return (
-        <tr
-            style={{
-                backgroundColor:props.startEditing?'yellow':'cyan'
-            }}
-        >
+        <tr>
             <td>{atributo.atributo}</td>
             <td colSpan={2} className="atributo-anterior" >{atributo.valorAnterior}</td>
             {props.primerAtributo?<td rowSpan={props.cantidadAtributos} className="flechaAtributos">→</td>:null}
@@ -166,7 +180,10 @@ function AtributosRow(props:{dataAtributo:DataAtributo, primerAtributo:boolean, 
     )
 }
 
-function PreciosRow(props:{dataPrecio:DataPrecio, onUpdate:OnUpdate<DataPrecio>}){
+function PreciosRow(props:{
+    dataPrecio:DataPrecio, 
+    onUpdate:OnUpdate<DataPrecio>
+}){
     const [editandoAtributo,setEditandoAtributo] = useState(null);
     return (
         <tbody>
@@ -177,7 +194,7 @@ function PreciosRow(props:{dataPrecio:DataPrecio, onUpdate:OnUpdate<DataPrecio>}
                 </td>
                 <td className="observaiones"><button>Obs.</button></td>
                 <td className="tipoPrecioAnterior">{props.dataPrecio.tipoPrecioAnterior}</td>
-                <td data-type="number" className="precioAnterior">{props.dataPrecio.precioAnterior}</td>
+                <td className="precioAnterior">{props.dataPrecio.precioAnterior}</td>
                 { props.dataPrecio.tipoPrecio==null && props.dataPrecio.tipoPrecioAnterior!=null ?
                     <td className="flechaTP" onClick={ () => {
                         props.dataPrecio.tipoPrecio = props.dataPrecio.tipoPrecioAnterior;
@@ -186,7 +203,7 @@ function PreciosRow(props:{dataPrecio:DataPrecio, onUpdate:OnUpdate<DataPrecio>}
                     :<td className="flechaTP"></td>
                 }
                 <td className="tipoPrecio">{props.dataPrecio.tipoPrecio}</td>
-                <EditableTd data-type="number" className="precio" value={props.dataPrecio.precio} onUpdate={value=>{
+                <EditableTd className="precio" value={props.dataPrecio.precio} onUpdate={value=>{
                     props.dataPrecio.precio=value;
                     props.onUpdate(props.dataPrecio);
                 }}/>
