@@ -65,26 +65,33 @@ while(dataPreciosInicial.length<100){
     dataPreciosInicial.push(changing(dataPreciosInicialCorto[Math.floor(Math.random()*3)],{}));
 }
 
-function AtributosRow(props:{dataAtributo:DataAtributo, primerAtributo:boolean, cantidadAtributos:number, onUpdate:(modifAtributo:DataAtributo)}){
+type OnUpdate<T> = (data:T)=>void
+
+function InputText(props:{value:string, onUpdate:OnUpdate<string>}){
+    return (
+        <input value={props.value} onBlur={(event)=>{
+            props.onUpdate(event.target.value);
+        }}/>
+    )
+}
+
+function AtributosRow(props:{dataAtributo:DataAtributo, primerAtributo:boolean, cantidadAtributos:number, onUpdate:(modifAtributo:DataAtributo)=>void}){
     const atributo = props.dataAtributo;
     const [editando, setEditando] = useState(false);
     return (
         <tr>
             <td>{atributo.atributo}</td>
-            <td colSpan={2}>{atributo.valorAnterior}</td>
+            <td colSpan={2} className="atributo-anterior" >{atributo.valorAnterior}</td>
             {props.primerAtributo?<td rowSpan={props.cantidadAtributos} className="flechaAtributos">→</td>:null}
-            <td colSpan={2} onClick={
+            <td colSpan={2} className="atributo-actual" onClick={
                 ()=>setEditando(true)
-            }>{editando?
-                <input value={atributo.valor} onBlur={(event)=>{
-                    atributo.valor=event.target.value;
-                    setEditando(false)
-                    props.onUpdate(atributo);
-                }}/>
-                :atributo.valor
+            }>{editando?<InputText value={atributo.valor} onUpdate={ value => {
+                atributo.valor=value;
+                setEditando(false)
+                props.onUpdate(atributo);
+            }}/>:atributo.valor
             }</td>
         </tr>
-
     )
 }
 
