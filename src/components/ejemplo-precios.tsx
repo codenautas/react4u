@@ -1,5 +1,5 @@
 import * as React from "react";
-import {useState, useRef, useEffect} from "react";
+import {useState, useRef, useEffect, useImperativeHandle, createRef, forwardRef} from "react";
 import {changing} from "best-globals";
 import * as likeAr from "like-ar";
 
@@ -105,14 +105,14 @@ function TypedInput<T>(props:{
     onWantToMoveForward?:()=>void
 }){
     var [value, setValue] = useState(props.value);
-    const ref = useRef(null);
+    const inputRef = useRef(null);
     useEffect(() => {
-        ref.current.focus();
+        inputRef.current.focus();
     }, []);
     // @ts-ignore acá hay un problema con el cambio de tipos
     var valueString:string = value==null?'':value;
     return (
-        <input ref={ref} value={valueString} onChange={(event)=>{
+        <input ref={inputRef} value={valueString} onChange={(event)=>{
             // @ts-ignore Tengo que averiguar cómo hacer esto genérico:
             setValue(event.target.value);
         }} onBlur={(event)=>{
@@ -122,7 +122,7 @@ function TypedInput<T>(props:{
             }
             props.onFocusOut();
         }} onMouseOut={()=>{
-            if(document.activeElement!=ref.current){
+            if(document.activeElement!=inputRef.current){
                 props.onFocusOut();
             }
         }} onKeyPress={event=>{
@@ -137,19 +137,23 @@ function TypedInput<T>(props:{
     )
 }
 
-function EditableTd<T>(props:{
+const EditableTd = forwardRef(function<T extends any>(props:{
     value:T, 
-    startEditing?:boolean,
     className?:string, colSpan?:number, rowSpan?:number, 
     onUpdate:OnUpdate<T>, 
     onWantToMoveForward?:()=>void
-}){
+},
+    ref:React.Ref<any>
+){
     const [editando, setEditando] = useState(false);
-    useEffect(()=>{
-        if(props.startEditing){
+    useImperativeHandle(ref, () => ({
+        focus: () => {
             setEditando(true)
+        },
+        unfocus: () => {
+            setEditando(false)
         }
-    });
+    }));    
     return (
         <td colSpan={props.colSpan} rowSpan={props.rowSpan} className={props.className} onClick={
             ()=>setEditando(true)
@@ -163,18 +167,18 @@ function EditableTd<T>(props:{
             :<div>{props.value}</div>}
         </td>
     )
-}
+});
 
-function AtributosRow(props:{
+const AtributosRow = forwardRef(function(props:{
     dataAtributo:DataAtributo, 
     cambio:string|null,
     primerAtributo:boolean, 
     cantidadAtributos:number, 
-    startEditing:boolean, 
     onUpdate:OnUpdate<DataAtributo>, 
     onCopiarAtributos:()=>void,
     onMarcarCambio:()=>void,
-    onWantToMoveForward?:()=>void}
+    onWantToMoveForward?:()=>void},
+    ref:React.Ref<any>
 ){
     const atributo = props.dataAtributo;
     return (
@@ -193,17 +197,17 @@ function AtributosRow(props:{
                 }
                 props.onUpdate(atributo);
             }} onWantToMoveForward={props.onWantToMoveForward}
-            startEditing={props.startEditing} />
+            ref={ref} />
         </tr>
     )
-}
+});
 
 function PreciosRow(props:{
     dataPrecio:DataPrecio, 
     onUpdate:OnUpdate<DataPrecio>
 }){
-    const [editandoAtributo,setEditandoAtributo] = useState(null);
-    const [editandoPrecio,setEditandoPrecio] = useState(null);
+    const precioRef = useRef(null);
+    const atributosRef = useRef(props.dataPrecio.atributos.map(() => createRef()));
     return (
         <tbody>
             <tr>
@@ -228,8 +232,9 @@ function PreciosRow(props:{
                         props.dataPrecio.tipoPrecio='P';
                     }
                     props.onUpdate(props.dataPrecio);
-                    setEditandoPrecio(false)
-                }} startEditing={editandoPrecio}/>
+                    /* TODO setEditandoPrecio(false) */
+                    precioRef.current.unfocus()
+                }} ref={precioRef}/>
             </tr>
             {props.dataPrecio.atributos.map((atributo,index)=>
                 <AtributosRow key={index}
@@ -249,7 +254,7 @@ function PreciosRow(props:{
                             )
                             props.dataPrecio.cambio='=';
                             if(!props.dataPrecio.precio){
-                                setEditandoPrecio(true)
+                                precioRef.current.focus();
                             }
                             props.onUpdate(props.dataPrecio);
                         }
@@ -258,9 +263,13 @@ function PreciosRow(props:{
                         props.dataPrecio.cambio='C';
                     }}
                     onWantToMoveForward={()=>{
-                        setEditandoAtributo(index+1);
+                        if(index<props.dataPrecio.atributos.length){
+                            atributosRef.current[index+1].current.focus()
+                        }else{
+                            atributosRef.current[index].current.unfocus()
+                        }
                     }}
-                    startEditing={editandoAtributo!=null && editandoAtributo==index}
+                    ref={atributosRef.current[index]}
                 />
             )}
         </tbody>
