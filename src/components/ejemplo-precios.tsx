@@ -3,6 +3,8 @@ import {useState, useRef, useEffect, useImperativeHandle, createRef, forwardRef}
 import {changing} from "best-globals";
 import * as likeAr from "like-ar";
 
+const FLECHA="→";
+
 type Focusable = {
     focus:()=>void
     blur:()=>void
@@ -201,7 +203,7 @@ const AtributosRow = forwardRef(function(props:{
             {props.primerAtributo?
                 <td rowSpan={props.cantidadAtributos} className="flechaAtributos" onClick={ () => {
                     props.onCopiarAtributos()
-                }}>{props.cambio==null?'→':props.cambio}</td>
+                }}>{props.cambio==null?FLECHA:props.cambio}</td>
                 :null}
             <EditableTd colSpan={2} className="atributo-actual" value={atributo.valor} onUpdate={value=>{
                 atributo.valor=value;
@@ -233,7 +235,7 @@ function PreciosRow(props:{
                     <td className="flechaTP" onClick={ () => {
                         props.dataPrecio.tipoPrecio = props.dataPrecio.tipoPrecioAnterior;
                         props.onUpdate(props.dataPrecio);
-                    }}>→</td>
+                    }}>{FLECHA}</td>
                     :<td className="flechaTP"></td>
                 }
                 <td className="tipoPrecio">{props.dataPrecio.tipoPrecio}</td>
