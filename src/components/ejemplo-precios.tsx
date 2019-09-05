@@ -109,7 +109,7 @@ function TypedInput<T>(props:{
     value:T, 
     onUpdate:OnUpdate<T>, 
     onFocusOut:()=>void, 
-    onWantToMoveForward?:(()=>void)|null
+    onWantToMoveForward?:(()=>boolean)|null
 }){
     var [value, setValue] = useState(props.value);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -137,9 +137,7 @@ function TypedInput<T>(props:{
         }} onKeyDown={event=>{
             var tecla = event.charCode || event.which;
             if((tecla==13 || tecla==9) && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey){
-                if(props.onWantToMoveForward){
-                    props.onWantToMoveForward();
-                }else{
+                if(!(props.onWantToMoveForward && props.onWantToMoveForward())){
                     if(inputRef.current!=null){
                         inputRef.current.blur();
                     }
@@ -154,12 +152,11 @@ const EditableTd = forwardRef(function<T extends any>(props:{
     value:T, 
     className?:string, colSpan?:number, rowSpan?:number, 
     onUpdate:OnUpdate<T>, 
-    onWantToMoveForward?:(()=>void)|null
+    onWantToMoveForward?:(()=>boolean)|null
 },
     ref:React.Ref<Focusable>
 ){
     const [editando, setEditando] = useState(false);
-    const refInput = useRef<HTMLInputElement>(null);
     useImperativeHandle(ref, () => ({
         focus: () => {
             setEditando(true)
@@ -192,7 +189,7 @@ const AtributosRow = forwardRef(function(props:{
     onUpdate:OnUpdate<DataAtributo>, 
     onCopiarAtributos:()=>void,
     onMarcarCambio:()=>void,
-    onWantToMoveForward?:()=>void},
+    onWantToMoveForward?:()=>boolean},
     ref:React.Ref<Focusable>
 ){
     const atributo = props.dataAtributo;
@@ -209,7 +206,7 @@ const AtributosRow = forwardRef(function(props:{
                 atributo.valor=value;
                 props.onMarcarCambio();
                 props.onUpdate(atributo);
-            }} onWantToMoveForward={props.ultimoAtributo?null:props.onWantToMoveForward}
+            }} onWantToMoveForward={props.onWantToMoveForward}
             ref={ref} />
         </tr>
     )
@@ -285,8 +282,17 @@ function PreciosRow(props:{
                             var nextItemRef=atributosRef.current[index+1];
                             if(nextItemRef.current!=null){
                                 nextItemRef.current.focus()
+                                return true;
+                            }
+                        }else{
+                            if(!props.dataPrecio.precio){
+                                if(precioRef.current){
+                                    precioRef.current.focus();
+                                    return true;
+                                }
                             }
                         }
+                        return false;
                     }}
                     ref={atributosRef.current[index]}
                 />
