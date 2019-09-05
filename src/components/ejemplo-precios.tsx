@@ -303,15 +303,28 @@ function PreciosRow(props:{
 
 export function PruebaRelevamientoPrecios(){
     const [dataPrecios, setDataPrecios] = useState(dataPreciosInicial);
+    const ref = useRef<HTMLTableElement>(null);
+    useEffect(()=>{
+        if(ref.current){
+            var thInThead=ref.current.querySelectorAll('thead th');
+            var minReducer = (min:number, th:HTMLElement)=>Math.min(min, th.offsetTop);
+            // @ts-ignore
+            var minTop = Array.prototype.reduce.call(thInThead, minReducer, Number.MAX_VALUE)
+            Array.prototype.map.call(thInThead,(th:HTMLElement)=>{
+                console.log(th,th.offsetTop - minTop);
+                th.style.top = th.offsetTop - minTop + 'px'
+            })
+        }
+    })
     return (
-        <table className="formulario-precios">
+        <table className="formulario-precios" ref={ref}>
             <caption>Formulario X</caption>
             <thead>
                 <tr>
                     <th rowSpan={2}>producto<br/>especificación</th>
                     <th rowSpan={2}>obs.<br/>atributos</th>
                     <th colSpan={2}>anterior</th>
-                    <td rowSpan={2} className="flechaTitulos"></td>
+                    <th rowSpan={2} className="flechaTitulos"></th>
                     <th colSpan={2}>actual</th>
                 </tr>
                 <tr>
