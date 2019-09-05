@@ -3,10 +3,15 @@ import {useState, useRef, useEffect, useImperativeHandle, createRef, forwardRef}
 import {changing} from "best-globals";
 import * as likeAr from "like-ar";
 
+type Focusable = {
+    focus:()=>void
+    blur:()=>void
+}
+
 type DataAtributo = {
     atributo:string,
-    valorAnterior:string,
-    valor:string
+    valorAnterior:string|null,
+    valor:string|null
 }
 
 type DataPrecio = {
@@ -102,12 +107,14 @@ function TypedInput<T>(props:{
     value:T, 
     onUpdate:OnUpdate<T>, 
     onFocusOut:()=>void, 
-    onWantToMoveForward?:()=>void
+    onWantToMoveForward?:(()=>void)|null
 }){
     var [value, setValue] = useState(props.value);
-    const inputRef = useRef(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     useEffect(() => {
-        inputRef.current.focus();
+        if(inputRef.current != null){
+            inputRef.current.focus();
+        }
     }, []);
     // @ts-ignore acá hay un problema con el cambio de tipos
     var valueString:string = value==null?'':value;
@@ -125,13 +132,17 @@ function TypedInput<T>(props:{
             if(document.activeElement!=inputRef.current){
                 props.onFocusOut();
             }
-        }} onKeyPress={event=>{
+        }} onKeyDown={event=>{
             var tecla = event.charCode || event.which;
             if((tecla==13 || tecla==9) && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey){
                 if(props.onWantToMoveForward){
                     props.onWantToMoveForward();
-                    event.preventDefault();
+                }else{
+                    if(inputRef.current!=null){
+                        inputRef.current.blur();
+                    }
                 }
+                event.preventDefault();
             }
         }}/>
     )
@@ -141,16 +152,17 @@ const EditableTd = forwardRef(function<T extends any>(props:{
     value:T, 
     className?:string, colSpan?:number, rowSpan?:number, 
     onUpdate:OnUpdate<T>, 
-    onWantToMoveForward?:()=>void
+    onWantToMoveForward?:(()=>void)|null
 },
-    ref:React.Ref<any>
+    ref:React.Ref<Focusable>
 ){
     const [editando, setEditando] = useState(false);
+    const refInput = useRef<HTMLInputElement>(null);
     useImperativeHandle(ref, () => ({
         focus: () => {
             setEditando(true)
         },
-        unfocus: () => {
+        blur: () => {
             setEditando(false)
         }
     }));    
@@ -174,11 +186,12 @@ const AtributosRow = forwardRef(function(props:{
     cambio:string|null,
     primerAtributo:boolean, 
     cantidadAtributos:number, 
+    ultimoAtributo:boolean,
     onUpdate:OnUpdate<DataAtributo>, 
     onCopiarAtributos:()=>void,
     onMarcarCambio:()=>void,
     onWantToMoveForward?:()=>void},
-    ref:React.Ref<any>
+    ref:React.Ref<Focusable>
 ){
     const atributo = props.dataAtributo;
     return (
@@ -194,7 +207,7 @@ const AtributosRow = forwardRef(function(props:{
                 atributo.valor=value;
                 props.onMarcarCambio();
                 props.onUpdate(atributo);
-            }} onWantToMoveForward={props.onWantToMoveForward}
+            }} onWantToMoveForward={props.ultimoAtributo?null:props.onWantToMoveForward}
             ref={ref} />
         </tr>
     )
@@ -204,8 +217,8 @@ function PreciosRow(props:{
     dataPrecio:DataPrecio, 
     onUpdate:OnUpdate<DataPrecio>
 }){
-    const precioRef = useRef(null);
-    const atributosRef = useRef(props.dataPrecio.atributos.map(() => createRef()));
+    const precioRef = useRef<HTMLInputElement>(null);
+    const atributosRef = useRef(props.dataPrecio.atributos.map(() => createRef<HTMLInputElement>()));
     return (
         <tbody>
             <tr>
@@ -230,8 +243,9 @@ function PreciosRow(props:{
                         props.dataPrecio.tipoPrecio='P';
                     }
                     props.onUpdate(props.dataPrecio);
-                    /* TODO setEditandoPrecio(false) */
-                    precioRef.current.unfocus()
+                    if(precioRef.current!=null){
+                        precioRef.current.blur()
+                    }
                 }} ref={precioRef}/>
             </tr>
             {props.dataPrecio.atributos.map((atributo,index)=>
@@ -240,6 +254,7 @@ function PreciosRow(props:{
                     primerAtributo={index==0}
                     cambio={props.dataPrecio.cambio}
                     cantidadAtributos={props.dataPrecio.atributos.length}
+                    ultimoAtributo={index == props.dataPrecio.atributos.length-1}
                     onUpdate={(modifAtributo)=>{
                         props.dataPrecio.atributos.splice(index,1,modifAtributo);
                         props.onUpdate(props.dataPrecio);
@@ -251,7 +266,7 @@ function PreciosRow(props:{
                                 atrib.valor = atrib.valorAnterior
                             )
                             props.dataPrecio.cambio='=';
-                            if(!props.dataPrecio.precio){
+                            if(!props.dataPrecio.precio && precioRef.current){
                                 precioRef.current.focus();
                             }
                             props.onUpdate(props.dataPrecio);
@@ -264,10 +279,11 @@ function PreciosRow(props:{
                         props.dataPrecio.cambio=(atributosIguales.length == props.dataPrecio.atributos.length)?'=':'C';
                     }}
                     onWantToMoveForward={()=>{
-                        if(index<props.dataPrecio.atributos.length){
-                            atributosRef.current[index+1].current.focus()
-                        }else{
-                            atributosRef.current[index].current.unfocus()
+                        if(index<props.dataPrecio.atributos.length-1){
+                            var nextItemRef=atributosRef.current[index+1];
+                            if(nextItemRef.current!=null){
+                                nextItemRef.current.focus()
+                            }
                         }
                     }}
                     ref={atributosRef.current[index]}

@@ -92,9 +92,9 @@ function RowPregunta(props:{pregunta:Pregunta}){
                     <div className="pregunta-aclaracion">{pregunta.aclaracion}</div>
                 :null}
                 {pregunta.opciones?
-                    <table>{pregunta.opciones.map(opcion=>
+                    <table><tbody>{pregunta.opciones.map(opcion=>
                         <RowOpciones key={opcion.opcion} opcion={opcion}/>
-                    )}</table>
+                    )}</tbody></table>
                 :null}
             </td>
         </tr>
