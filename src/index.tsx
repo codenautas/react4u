@@ -9,8 +9,8 @@ import { ProbarFormularioEncuesta } from "./components/ejemplo-encuesta"
 ReactDOM.render(
     <React.StrictMode>
         <SaludoInicial mensaje="React is 4 U!" appName="react4u"/>
-        <PruebaRelevamientoPrecios/>,
-        <ProbarFormularioEncuesta/>,
+        <PruebaRelevamientoPrecios/>
+        <ProbarFormularioEncuesta/>
     </React.StrictMode>,
     document.getElementById("main_layout")
 )

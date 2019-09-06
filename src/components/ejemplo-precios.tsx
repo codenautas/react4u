@@ -3,7 +3,8 @@ import {useState, useRef, useEffect, useImperativeHandle, createRef, forwardRef}
 import {changing} from "best-globals";
 import * as likeAr from "like-ar";
 
-const FLECHA="→";
+const FLECHATIPOPRECIO="→";
+const FLECHAATRIBUTOS="➡";
 
 type Focusable = {
     focus:()=>void
@@ -26,6 +27,27 @@ type DataPrecio = {
     atributos:DataAtributo[],
     cambio:string|null
 }
+
+type TiposPrecioDef = {
+    tipoPrecio: string,
+    descripcion: string,
+    positivo: boolean,
+    copiable?: true, 
+    predeterminado?: true, 
+}
+
+var tiposPrecioDef:TiposPrecioDef[]=[
+    {tipoPrecio:'P', descripcion:'Precio normal'   , positivo:true , predeterminado:true},
+    {tipoPrecio:'O', descripcion:'Oferta'          , positivo:true },
+    {tipoPrecio:'B', descripcion:'Bonificado'      , positivo:true },
+    {tipoPrecio:'S', descripcion:'Sin existencia'  , positivo:false},
+    {tipoPrecio:'N', descripcion:'No vende'        , positivo:false, copiable:true},
+    {tipoPrecio:'E', descripcion:'Falta estacional', positivo:false, copiable:true},
+];
+
+var tipoPrecio=likeAr.createIndex(tiposPrecioDef, 'tipoPrecio');
+
+var tipoPrecioPredeterminado = tiposPrecioDef.find(tp=>tp.predeterminado)!;
 
 var dataPreciosInicialCorto:DataPrecio[] = [
     {
@@ -59,12 +81,12 @@ var dataPreciosInicialCorto:DataPrecio[] = [
         especificacion:'Paquete de yerba con palo en envase de papel de 500g',
         tipoPrecioAnterior:'S',
         precioAnterior:null,
-        tipoPrecio:null,
+        tipoPrecio:'S',
         precio:null,
         atributos:[
-            {atributo:'Marca', valorAnterior:'Unión', valor:null},
-            {atributo:'Variante', valorAnterior:'Suave sin palo', valor:null},
-            {atributo:'Gramaje', valorAnterior:'500', valor:null}
+            {atributo:'Marca', valorAnterior:'Unión', valor:'Unión'},
+            {atributo:'Variante', valorAnterior:'Suave sin palo', valor:'Suave sin palo'},
+            {atributo:'Gramaje', valorAnterior:'500', valor:'500'}
         ],
         cambio: null
     },
@@ -97,7 +119,32 @@ var dataPreciosInicialCorto:DataPrecio[] = [
     },
 ];
 
-var dataPreciosInicial=[...dataPreciosInicialCorto];
+var dataPreciosInicial=[...dataPreciosInicialCorto,
+    {
+        producto:'Mandarina',
+        especificacion:'Mandarina común',
+        tipoPrecioAnterior:'E',
+        precioAnterior:null,
+        tipoPrecio:null,
+        precio:null,
+        atributos:[],
+        cambio: null
+    },
+    {
+        producto:'Carbón de leña',
+        especificacion:'Carbón de leña en bolsa de plástico o papel de 3 a 5kg',
+        tipoPrecioAnterior:'N',
+        precioAnterior:null,
+        tipoPrecio:null,
+        precio:null,
+        atributos:[
+            {atributo:'Marca'   , valorAnterior:'s/m'   , valor:null},
+            {atributo:'Kilos'   , valorAnterior:'3'     , valor:null},
+            {atributo:'Envase'  , valorAnterior:'Papel' , valor:null},
+        ],
+        cambio: null
+    },
+];
 
 while(dataPreciosInicial.length<100){
     dataPreciosInicial.push(changing(dataPreciosInicialCorto[Math.floor(Math.random()*dataPreciosInicialCorto.length)],{}));
@@ -187,6 +234,7 @@ const AtributosRow = forwardRef(function(props:{
     cantidadAtributos:number, 
     ultimoAtributo:boolean,
     onUpdate:OnUpdate<DataAtributo>, 
+    habilitarCopiado:boolean, 
     onCopiarAtributos:()=>void,
     onMarcarCambio:()=>void,
     onWantToMoveForward?:()=>boolean},
@@ -199,8 +247,10 @@ const AtributosRow = forwardRef(function(props:{
             <td colSpan={2} className="atributo-anterior" >{atributo.valorAnterior}</td>
             {props.primerAtributo?
                 <td rowSpan={props.cantidadAtributos} className="flechaAtributos" onClick={ () => {
-                    props.onCopiarAtributos()
-                }}>{props.cambio==null?FLECHA:props.cambio}</td>
+                    if(props.habilitarCopiado){
+                        props.onCopiarAtributos()
+                    }
+                }}>{props.habilitarCopiado?FLECHAATRIBUTOS:props.cambio}</td>
                 :null}
             <EditableTd colSpan={2} className="atributo-actual" value={atributo.valor} onUpdate={value=>{
                 atributo.valor=value;
@@ -218,6 +268,7 @@ function PreciosRow(props:{
 }){
     const precioRef = useRef<HTMLInputElement>(null);
     const atributosRef = useRef(props.dataPrecio.atributos.map(() => createRef<HTMLInputElement>()));
+    var habilitarCopiado = props.dataPrecio.cambio==null && (!props.dataPrecio.tipoPrecio || tipoPrecio[props.dataPrecio.tipoPrecio].positivo);
     return (
         <tbody>
             <tr>
@@ -228,18 +279,22 @@ function PreciosRow(props:{
                 <td className="observaiones"><button>Obs.</button></td>
                 <td className="tipoPrecioAnterior">{props.dataPrecio.tipoPrecioAnterior}</td>
                 <td className="precioAnterior">{props.dataPrecio.precioAnterior}</td>
-                { props.dataPrecio.tipoPrecio==null && props.dataPrecio.tipoPrecioAnterior!=null ?
+                { props.dataPrecio.tipoPrecio==null 
+                    && props.dataPrecio.tipoPrecioAnterior!=null 
+                    && tipoPrecio[props.dataPrecio.tipoPrecioAnterior].copiable
+                ?
                     <td className="flechaTP" onClick={ () => {
                         props.dataPrecio.tipoPrecio = props.dataPrecio.tipoPrecioAnterior;
                         props.onUpdate(props.dataPrecio);
-                    }}>{FLECHA}</td>
-                    :<td className="flechaTP"></td>
+                    }}>{FLECHATIPOPRECIO}</td>
+                :
+                    <td className="flechaTP"></td>
                 }
                 <td className="tipoPrecio">{props.dataPrecio.tipoPrecio}</td>
                 <EditableTd className="precio" value={props.dataPrecio.precio} onUpdate={value=>{
                     props.dataPrecio.precio=value;
                     if(!props.dataPrecio.tipoPrecio && props.dataPrecio.precio){
-                        props.dataPrecio.tipoPrecio='P';
+                        props.dataPrecio.tipoPrecio=tipoPrecioPredeterminado.tipoPrecio;
                     }
                     props.onUpdate(props.dataPrecio);
                     if(precioRef.current!=null){
@@ -252,6 +307,7 @@ function PreciosRow(props:{
                     dataAtributo={atributo}
                     primerAtributo={index==0}
                     cambio={props.dataPrecio.cambio}
+                    habilitarCopiado={habilitarCopiado}
                     cantidadAtributos={props.dataPrecio.atributos.length}
                     ultimoAtributo={index == props.dataPrecio.atributos.length-1}
                     onUpdate={(modifAtributo)=>{
@@ -260,7 +316,7 @@ function PreciosRow(props:{
                         
                     }}
                     onCopiarAtributos={()=>{
-                        if(props.dataPrecio.cambio==null){
+                        if(habilitarCopiado){
                             props.dataPrecio.atributos.forEach((atrib)=>
                                 atrib.valor = atrib.valorAnterior
                             )
@@ -268,6 +324,7 @@ function PreciosRow(props:{
                             if(!props.dataPrecio.precio && precioRef.current){
                                 precioRef.current.focus();
                             }
+                            props.dataPrecio.tipoPrecio=tipoPrecioPredeterminado.tipoPrecio;
                             props.onUpdate(props.dataPrecio);
                         }
                     }}
@@ -276,6 +333,7 @@ function PreciosRow(props:{
                             atrib.valorAnterior == atrib.valor
                         );
                         props.dataPrecio.cambio=(atributosIguales.length == props.dataPrecio.atributos.length)?'=':'C';
+                        props.onUpdate(props.dataPrecio);
                     }}
                     onWantToMoveForward={()=>{
                         if(index<props.dataPrecio.atributos.length-1){
