@@ -337,7 +337,7 @@ function PreciosRow(props:{
                     aria-labelledby="alert-dialog-title"
                     aria-describedby="alert-dialog-description"
                 >
-                    <DialogTitle id="alert-dialog-title">{"Confirma tipo de precio negativo?"}</DialogTitle>
+                    <DialogTitle id="alert-dialog-title">{"Eligió un tipo de precio negativo pero había precios o atributos cargados"}</DialogTitle>
                     <DialogContent>
                         <DialogContentText id="alert-dialog-description">
                             Se borrará el precio y los atributos
@@ -346,8 +346,8 @@ function PreciosRow(props:{
                     <DialogActions>
                         <Button onClick={()=>{
                             setMenuConfirmarBorradoPrecio(false)
-                        }} color="primary">
-                            Cancelar
+                        }} color="primary" variant="outlined">
+                            No borrar
                         </Button>
                         <Button onClick={()=>{
                             props.dataPrecio.tipoPrecio = tipoDePrecioNegativoAConfirmar;
@@ -357,8 +357,8 @@ function PreciosRow(props:{
                             props.onUpdate(props.dataPrecio);
                             setDeshabilitarPrecio(true);
                             setMenuConfirmarBorradoPrecio(false)
-                        }} color="primary">
-                            Borrar
+                        }} color="secondary" variant="outlined">
+                            Borrar precios y/o atributos
                         </Button>
                     </DialogActions>
                 </Dialog>
