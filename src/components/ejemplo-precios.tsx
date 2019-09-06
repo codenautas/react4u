@@ -300,13 +300,15 @@ function PreciosRow(props:{
                     open={Boolean(menuTipoPrecio)}
                     anchorEl={menuTipoPrecio}
                     onClose={()=>setMenuTipoPrecio(null)}
-                    transitionDuration={20}
                 >
                     {tiposPrecioDef.map(tpDef=>
                         <MenuItem key={tpDef.tipoPrecio} onClick={()=>{
                             props.dataPrecio.tipoPrecio = tpDef.tipoPrecio;
                             setMenuTipoPrecio(null);
-                            props.onUpdate(props.dataPrecio);
+                            /**
+                             * // TODO: REVISAR por qué hacía delay
+                             */
+                            //props.onUpdate(props.dataPrecio);
                         }}>
                             <ListItemText>{tpDef.tipoPrecio}&nbsp;</ListItemText>
                             <ListItemText>&nbsp;{tpDef.descripcion}</ListItemText>
