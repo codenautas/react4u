@@ -198,6 +198,7 @@ function TypedInput<T>(props:{
 }
 
 const EditableTd = forwardRef(function<T extends any>(props:{
+    disabled?:boolean,
     value:T, 
     className?:string, colSpan?:number, rowSpan?:number, 
     onUpdate:OnUpdate<T>, 
@@ -208,7 +209,7 @@ const EditableTd = forwardRef(function<T extends any>(props:{
     const [editando, setEditando] = useState(false);
     useImperativeHandle(ref, () => ({
         focus: () => {
-            setEditando(true)
+            setEditando(true && !props.disabled)
         },
         blur: () => {
             setEditando(false)
@@ -216,7 +217,7 @@ const EditableTd = forwardRef(function<T extends any>(props:{
     }));    
     return (
         <td colSpan={props.colSpan} rowSpan={props.rowSpan} className={props.className} onClick={
-            ()=>setEditando(true)
+            ()=>setEditando(true && !props.disabled)
         }>
             {editando?
                 <TypedInput value={props.value} onUpdate={value =>{
@@ -237,6 +238,7 @@ const AtributosRow = forwardRef(function(props:{
     ultimoAtributo:boolean,
     onUpdate:OnUpdate<DataAtributo>, 
     habilitarCopiado:boolean, 
+    deshabilitarAtributo:boolean,
     onCopiarAtributos:()=>void,
     onMarcarCambio:()=>void,
     onWantToMoveForward?:()=>boolean},
@@ -254,7 +256,7 @@ const AtributosRow = forwardRef(function(props:{
                     }
                 }}>{props.habilitarCopiado?FLECHAATRIBUTOS:props.cambio}</td>
                 :null}
-            <EditableTd colSpan={2} className="atributo-actual" value={atributo.valor} onUpdate={value=>{
+            <EditableTd disabled={props.deshabilitarAtributo} colSpan={2} className="atributo-actual" value={atributo.valor} onUpdate={value=>{
                 atributo.valor=value;
                 props.onMarcarCambio();
                 props.onUpdate(atributo);
@@ -273,6 +275,7 @@ function PreciosRow(props:{
     const [menuTipoPrecio, setMenuTipoPrecio] = useState<HTMLElement|null>(null);
     const [menuConfirmarBorradoPrecio, setMenuConfirmarBorradoPrecio] = useState<boolean>(false);
     const [tipoDePrecioNegativoAConfirmar, setTipoDePrecioNegativoAConfirmar] = useState<string|null>(null);
+    const [deshabilitarPrecio, setDeshabilitarPrecio] = useState<boolean>(props.dataPrecio.tipoPrecio?!(tipoPrecio[props.dataPrecio.tipoPrecio].positivo):false);
     var habilitarCopiado = props.dataPrecio.cambio==null && (!props.dataPrecio.tipoPrecio || tipoPrecio[props.dataPrecio.tipoPrecio].positivo);
     return (
         <tbody>
@@ -312,6 +315,7 @@ function PreciosRow(props:{
                                 setTipoDePrecioNegativoAConfirmar(tpDef.tipoPrecio);
                                 setMenuConfirmarBorradoPrecio(true)
                             }else{
+                                setDeshabilitarPrecio(!tipoPrecio[tpDef.tipoPrecio].positivo);
                                 props.dataPrecio.tipoPrecio = tpDef.tipoPrecio;
                                 if(precioRef.current && !props.dataPrecio.precio && tipoPrecio[tpDef.tipoPrecio].positivo){
                                     precioRef.current.focus();
@@ -335,29 +339,30 @@ function PreciosRow(props:{
                 >
                     <DialogTitle id="alert-dialog-title">{"Confirma tipo de precio negativo?"}</DialogTitle>
                     <DialogContent>
-                    <DialogContentText id="alert-dialog-description">
-                        Se borrará el precio y los atributos
-                    </DialogContentText>
+                        <DialogContentText id="alert-dialog-description">
+                            Se borrará el precio y los atributos
+                        </DialogContentText>
                     </DialogContent>
                     <DialogActions>
-                    <Button onClick={()=>{
-                        setMenuConfirmarBorradoPrecio(false)
-                    }} color="primary">
-                        Cancelar
-                    </Button>
-                    <Button onClick={()=>{
-                        props.dataPrecio.tipoPrecio = tipoDePrecioNegativoAConfirmar;
-                        props.dataPrecio.precio=null;
-                        props.dataPrecio.cambio=null;
-                        props.dataPrecio.atributos.forEach((atrib)=>atrib.valor=null);
-                        props.onUpdate(props.dataPrecio);
-                        setMenuConfirmarBorradoPrecio(false)
-                    }} color="primary">
-                        Borrar
-                    </Button>
+                        <Button onClick={()=>{
+                            setMenuConfirmarBorradoPrecio(false)
+                        }} color="primary">
+                            Cancelar
+                        </Button>
+                        <Button onClick={()=>{
+                            props.dataPrecio.tipoPrecio = tipoDePrecioNegativoAConfirmar;
+                            props.dataPrecio.precio=null;
+                            props.dataPrecio.cambio=null;
+                            props.dataPrecio.atributos.forEach((atrib)=>atrib.valor=null);
+                            props.onUpdate(props.dataPrecio);
+                            setDeshabilitarPrecio(true);
+                            setMenuConfirmarBorradoPrecio(false)
+                        }} color="primary">
+                            Borrar
+                        </Button>
                     </DialogActions>
                 </Dialog>
-                <EditableTd className="precio" value={props.dataPrecio.precio} onUpdate={value=>{
+                <EditableTd disabled={deshabilitarPrecio} className="precio" value={props.dataPrecio.precio} onUpdate={value=>{
                     props.dataPrecio.precio=value;
                     if(!props.dataPrecio.tipoPrecio && props.dataPrecio.precio){
                         props.dataPrecio.tipoPrecio=tipoPrecioPredeterminado.tipoPrecio;
@@ -374,6 +379,7 @@ function PreciosRow(props:{
                     primerAtributo={index==0}
                     cambio={props.dataPrecio.cambio}
                     habilitarCopiado={habilitarCopiado}
+                    deshabilitarAtributo={deshabilitarPrecio}
                     cantidadAtributos={props.dataPrecio.atributos.length}
                     ultimoAtributo={index == props.dataPrecio.atributos.length-1}
                     onUpdate={(modifAtributo)=>{
@@ -435,7 +441,6 @@ export function PruebaRelevamientoPrecios(){
             // @ts-ignore
             var minTop = Array.prototype.reduce.call(thInThead, minReducer, Number.MAX_VALUE)
             Array.prototype.map.call(thInThead,(th:HTMLElement)=>{
-                console.log(th,th.offsetTop - minTop);
                 th.style.top = th.offsetTop - minTop + 'px'
             })
         }
