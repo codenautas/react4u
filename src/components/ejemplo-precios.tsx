@@ -2,7 +2,8 @@ import * as React from "react";
 import {useState, useRef, useEffect, useImperativeHandle, createRef, forwardRef} from "react";
 import {changing} from "best-globals";
 import * as likeAr from "like-ar";
-import {Menu, MenuItem, ListItemText} from "@material-ui/core";
+import {Menu, MenuItem, ListItemText, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle} from "@material-ui/core";
+
 
 const FLECHATIPOPRECIO="→";
 const FLECHAATRIBUTOS="➡";
@@ -269,7 +270,9 @@ function PreciosRow(props:{
 }){
     const precioRef = useRef<HTMLInputElement>(null);
     const atributosRef = useRef(props.dataPrecio.atributos.map(() => createRef<HTMLInputElement>()));
-    const [menuTipoPrecio, setMenuTipoPrecio] = React.useState<HTMLElement|null>(null);
+    const [menuTipoPrecio, setMenuTipoPrecio] = useState<HTMLElement|null>(null);
+    const [menuConfirmarBorradoPrecio, setMenuConfirmarBorradoPrecio] = useState<boolean>(false);
+    const [tipoDePrecioNegativoAConfirmar, setTipoDePrecioNegativoAConfirmar] = useState<string|null>(null);
     var habilitarCopiado = props.dataPrecio.cambio==null && (!props.dataPrecio.tipoPrecio || tipoPrecio[props.dataPrecio.tipoPrecio].positivo);
     return (
         <tbody>
@@ -303,8 +306,17 @@ function PreciosRow(props:{
                 >
                     {tiposPrecioDef.map(tpDef=>
                         <MenuItem key={tpDef.tipoPrecio} onClick={()=>{
-                            props.dataPrecio.tipoPrecio = tpDef.tipoPrecio;
                             setMenuTipoPrecio(null);
+                            var necesitaConfirmacion = !tipoPrecio[tpDef.tipoPrecio].positivo && props.dataPrecio.precio != null || props.dataPrecio.cambio != null;
+                            if(necesitaConfirmacion){
+                                setTipoDePrecioNegativoAConfirmar(tpDef.tipoPrecio);
+                                setMenuConfirmarBorradoPrecio(true)
+                            }else{
+                                props.dataPrecio.tipoPrecio = tpDef.tipoPrecio;
+                                if(precioRef.current && !props.dataPrecio.precio && tipoPrecio[tpDef.tipoPrecio].positivo){
+                                    precioRef.current.focus();
+                                }
+                            }
                             /**
                              * // TODO: REVISAR por qué hacía delay
                              */
@@ -315,6 +327,36 @@ function PreciosRow(props:{
                         </MenuItem>
                     )}
                 </Menu>
+                <Dialog
+                    open={menuConfirmarBorradoPrecio}
+                    onClose={()=>setMenuConfirmarBorradoPrecio(false)}
+                    aria-labelledby="alert-dialog-title"
+                    aria-describedby="alert-dialog-description"
+                >
+                    <DialogTitle id="alert-dialog-title">{"Confirma tipo de precio negativo?"}</DialogTitle>
+                    <DialogContent>
+                    <DialogContentText id="alert-dialog-description">
+                        Se borrará el precio y los atributos
+                    </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                    <Button onClick={()=>{
+                        setMenuConfirmarBorradoPrecio(false)
+                    }} color="primary">
+                        Cancelar
+                    </Button>
+                    <Button onClick={()=>{
+                        props.dataPrecio.tipoPrecio = tipoDePrecioNegativoAConfirmar;
+                        props.dataPrecio.precio=null;
+                        props.dataPrecio.cambio=null;
+                        props.dataPrecio.atributos.forEach((atrib)=>atrib.valor=null);
+                        props.onUpdate(props.dataPrecio);
+                        setMenuConfirmarBorradoPrecio(false)
+                    }} color="primary">
+                        Borrar
+                    </Button>
+                    </DialogActions>
+                </Dialog>
                 <EditableTd className="precio" value={props.dataPrecio.precio} onUpdate={value=>{
                     props.dataPrecio.precio=value;
                     if(!props.dataPrecio.tipoPrecio && props.dataPrecio.precio){
