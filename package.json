@@ -22,6 +22,7 @@
     "types.d.ts": "^0.4.8"
   },
   "dependencies": {
+    "@material-ui/core": "~4.4.0",
     "ajax-best-promise": "^0.3.7",
     "best-globals": "^0.10.22",
     "like-ar": "^0.2.16",

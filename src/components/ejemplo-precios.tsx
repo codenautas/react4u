@@ -2,6 +2,7 @@ import * as React from "react";
 import {useState, useRef, useEffect, useImperativeHandle, createRef, forwardRef} from "react";
 import {changing} from "best-globals";
 import * as likeAr from "like-ar";
+import {Menu, MenuItem, ListItemText} from "@material-ui/core";
 
 const FLECHATIPOPRECIO="→";
 const FLECHAATRIBUTOS="➡";
@@ -268,6 +269,7 @@ function PreciosRow(props:{
 }){
     const precioRef = useRef<HTMLInputElement>(null);
     const atributosRef = useRef(props.dataPrecio.atributos.map(() => createRef<HTMLInputElement>()));
+    const [menuTipoPrecio, setMenuTipoPrecio] = React.useState<HTMLElement|null>(null);
     var habilitarCopiado = props.dataPrecio.cambio==null && (!props.dataPrecio.tipoPrecio || tipoPrecio[props.dataPrecio.tipoPrecio].positivo);
     return (
         <tbody>
@@ -290,7 +292,27 @@ function PreciosRow(props:{
                 :
                     <td className="flechaTP"></td>
                 }
-                <td className="tipoPrecio">{props.dataPrecio.tipoPrecio}</td>
+                <td className="tipoPrecio"
+                    onClick={event=>setMenuTipoPrecio(event.currentTarget)}
+                >{props.dataPrecio.tipoPrecio}
+                </td>
+                <Menu id="simple-menu"
+                    open={Boolean(menuTipoPrecio)}
+                    anchorEl={menuTipoPrecio}
+                    onClose={()=>setMenuTipoPrecio(null)}
+                    transitionDuration={20}
+                >
+                    {tiposPrecioDef.map(tpDef=>
+                        <MenuItem key={tpDef.tipoPrecio} onClick={()=>{
+                            props.dataPrecio.tipoPrecio = tpDef.tipoPrecio;
+                            setMenuTipoPrecio(null);
+                            props.onUpdate(props.dataPrecio);
+                        }}>
+                            <ListItemText>{tpDef.tipoPrecio}&nbsp;</ListItemText>
+                            <ListItemText>&nbsp;{tpDef.descripcion}</ListItemText>
+                        </MenuItem>
+                    )}
+                </Menu>
                 <EditableTd className="precio" value={props.dataPrecio.precio} onUpdate={value=>{
                     props.dataPrecio.precio=value;
                     if(!props.dataPrecio.tipoPrecio && props.dataPrecio.precio){
