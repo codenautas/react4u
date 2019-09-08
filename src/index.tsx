@@ -11,16 +11,16 @@ import { CssBaseline } from "@material-ui/core";
 
 function ExampleApplication(){
     return <Application>
-        <WScreen page='main'>
+        <WScreen page='main' iconSvgPath="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" iconName="EmojiObjects">
             <HolaMundo mensaje="La demo" uno="React4U" dos={1.0} tres={new Date()}/>
         </WScreen>
-        <WScreen page='precios'>
+        <WScreen page='precios' iconName="LocalAtm">
             <PruebaRelevamientoPrecios/>
         </WScreen>
-        <WScreen page='encuesta'>
+        <WScreen page='encuesta' iconName="Assignment">
             <ProbarFormularioEncuesta/>
         </WScreen>
-        <WScreen page='json' menuLabel='json viewer'>
+        <WScreen page='json' menuLabel='json viewer' iconName="Code">
             <RenderDirectJsonApp/>
         </WScreen>
     </Application>;
