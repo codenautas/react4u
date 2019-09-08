@@ -26,12 +26,11 @@ const useStyles = makeStyles(theme => ({
 function ExampleApplication(){
     const classes = useStyles();
     const [selectedPage, setSelectedPage] = useState<string>('main')
-    // @ts-ignore no me deja poner null acá o |null o después en ref. 
-    const [hamburguerMenu, setHamburguerMenu] = useState<HTMLButtonElement>(null);
+    const [hamburguerMenu, setHamburguerMenu] = useState<HTMLButtonElement|null>(null);
     return <>
         <AppBar position="static">
             <Toolbar>
-                <IconButton edge="start" ref={hamburguerMenu} className={classes.menuButton} color="inherit" aria-label="menu"
+                <IconButton edge="start" className={classes.menuButton} color="inherit" aria-label="menu"
                     onClick={(event)=>setHamburguerMenu(event.currentTarget)}
                 >
                     <SvgIcon >
