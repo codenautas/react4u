@@ -23,12 +23,15 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function Application(props:{}){
-    return null;
+type Children = React.ReactElement;
 
+function WScreen(props:{page:string, menuLabel?:string, children:Children}){
+    return <>
+        {props.children}
+    </>;
 }
 
-function ExampleApplication(){
+function Application(props:{children:Children[]}){
     const classes = useStyles();
     const [selectedPage, setSelectedPage] = useState<string>('main')
     const [hamburguerMenu, setHamburguerMenu] = useState<HTMLButtonElement|null>(null);
@@ -48,29 +51,45 @@ function ExampleApplication(){
                 <Button color="inherit">Login</Button>
             </Toolbar>            
         </AppBar>
-        <Conditional visible={selectedPage=='main'}>
-            <HolaMundo mensaje="La demo" uno="React4U" dos={1.0} tres={new Date()}/>
-        </Conditional>
-        <Conditional visible={selectedPage=='json'}>
-            <RenderDirectJsonApp/>
-        </Conditional>
-        <Conditional visible={selectedPage=='precios'}>
-            <PruebaRelevamientoPrecios/>
-        </Conditional>
-        <Conditional visible={selectedPage=='encuesta'}>
-            <ProbarFormularioEncuesta/>
-        </Conditional>
+        {props.children.map(child=>
+            child.props.page && child.props.children?
+                <Conditional visible={child.props.page==selectedPage}>{child}</Conditional>
+            :child
+        )}
         <Menu
             anchorEl={hamburguerMenu}
             keepMounted
             open={Boolean(hamburguerMenu)}
             onClose={()=>setHamburguerMenu(null)}
         >
-            <MenuItem onClick={()=>{setSelectedPage('precios') ; setHamburguerMenu(null);}}>precios    </MenuItem>
-            <MenuItem onClick={()=>{setSelectedPage('encuesta'); setHamburguerMenu(null);}}>encuesta   </MenuItem>
-            <MenuItem onClick={()=>{setSelectedPage('json')    ; setHamburguerMenu(null);}}>json viewer</MenuItem>
+            {props.children.map(child=>
+                child.props.page?
+                    <MenuItem onClick={()=>{
+                        setSelectedPage(child.props.page) ; setHamburguerMenu(null);
+                    }}>
+                        {child.props.menuLabel||child.props.page}
+                    </MenuItem>
+                :null
+            )}
         </Menu>
     </>;
+}
+
+function ExampleApplication(){
+    return <Application>
+        <WScreen page='main'>
+            <HolaMundo mensaje="La demo" uno="React4U" dos={1.0} tres={new Date()}/>
+        </WScreen>
+        <WScreen page='precios'>
+            <PruebaRelevamientoPrecios/>
+        </WScreen>
+        <WScreen page='encuesta'>
+            <ProbarFormularioEncuesta/>
+        </WScreen>
+        <WScreen page='json' menuLabel='json viewer'>
+            <RenderDirectJsonApp/>
+        </WScreen>
+    </Application>;
 }
 
 ReactDOM.render(
