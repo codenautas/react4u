@@ -1,7 +1,4 @@
 import * as React from "react";
-import {useState, useRef, useEffect, useImperativeHandle, createRef, forwardRef} from "react";
-import {changing} from "best-globals";
-import * as likeAr from "like-ar";
 
 import {Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle} from '@material-ui/core';
 
