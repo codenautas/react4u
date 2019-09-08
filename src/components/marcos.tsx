@@ -9,3 +9,9 @@ export function SaludoInicial(props:{mensaje:string, appName:string}){
         </div>
     );
 }
+
+export function Conditional(props:{visible:boolean, children:any}){
+    return props.visible?<>
+        {props.children}
+    </>:null;
+}

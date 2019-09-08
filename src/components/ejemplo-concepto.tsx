@@ -19,7 +19,7 @@ export function ButtonWithAlertDialog() {
   return (
     <div>
       <Button variant="outlined" color="primary" onClick={handleClickOpen}>
-        Open alert dialog
+        Motivación
       </Button>
       <Dialog
         open={open}
@@ -27,19 +27,18 @@ export function ButtonWithAlertDialog() {
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">{"Use Google's location service?"}</DialogTitle>
+        <DialogTitle id="alert-dialog-title">{"¿Puede ser react un modo de mejorar el front-end?"}</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Let Google help apps determine location. This means sending anonymous location data to
-            Google, even when no apps are running.
+            Este es un ejemplo de pruebas de concepto que estamos haciendo en react
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} color="primary">
-            Disagree
+            Flojo
           </Button>
           <Button onClick={handleClose} color="primary" autoFocus>
-            Agree
+            Interesante
           </Button>
         </DialogActions>
       </Dialog>
