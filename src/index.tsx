@@ -23,6 +23,11 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+function Application(props:{}){
+    return null;
+
+}
+
 function ExampleApplication(){
     const classes = useStyles();
     const [selectedPage, setSelectedPage] = useState<string>('main')
@@ -37,16 +42,6 @@ function ExampleApplication(){
                         <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
                     </SvgIcon>
                 </IconButton>
-                <Menu
-                    anchorEl={hamburguerMenu}
-                    keepMounted
-                    open={Boolean(hamburguerMenu)}
-                    onClose={()=>setHamburguerMenu(null)}
-                >
-                    <MenuItem onClick={()=>{setSelectedPage('precios') ; setHamburguerMenu(null);}}>precios    </MenuItem>
-                    <MenuItem onClick={()=>{setSelectedPage('encuesta'); setHamburguerMenu(null);}}>encuesta   </MenuItem>
-                    <MenuItem onClick={()=>{setSelectedPage('json')    ; setHamburguerMenu(null);}}>json viewer</MenuItem>
-                </Menu>
                 <Typography variant="h6" className={classes.title}>
                     react4U
                 </Typography>
@@ -65,6 +60,16 @@ function ExampleApplication(){
         <Conditional visible={selectedPage=='encuesta'}>
             <ProbarFormularioEncuesta/>
         </Conditional>
+        <Menu
+            anchorEl={hamburguerMenu}
+            keepMounted
+            open={Boolean(hamburguerMenu)}
+            onClose={()=>setHamburguerMenu(null)}
+        >
+            <MenuItem onClick={()=>{setSelectedPage('precios') ; setHamburguerMenu(null);}}>precios    </MenuItem>
+            <MenuItem onClick={()=>{setSelectedPage('encuesta'); setHamburguerMenu(null);}}>encuesta   </MenuItem>
+            <MenuItem onClick={()=>{setSelectedPage('json')    ; setHamburguerMenu(null);}}>json viewer</MenuItem>
+        </Menu>
     </>;
 }
 
