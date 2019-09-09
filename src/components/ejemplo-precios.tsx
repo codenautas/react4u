@@ -268,7 +268,7 @@ function PreciosRow(props:{
     onCopiarAtributos:()=>void,
     setPrecio:(precio:number|null)=>void,
     setTipoPrecioPositivo:(tipoPrecio:string)=>void,
-    setearTipoPrecioNegativo:(tipoDePrecioNegativo:string)=>void,
+    setTipoPrecioNegativo:(tipoDePrecioNegativo:string)=>void,
     marcarCambio:()=>void,
     updateAtributo:(atributo:string, valor:string|null)=>void
     onUpdate:(dataPrecio:DataPrecio)=>void,
@@ -295,7 +295,12 @@ function PreciosRow(props:{
                     && tipoPrecio[props.dataPrecio.tipoPrecioAnterior].copiable
                 ?
                     <td className="flechaTP" onClick={ () => {
-                        props.setTipoPrecioPositivo(props.dataPrecio.tipoPrecioAnterior!);
+                        if(tipoPrecio[props.dataPrecio.tipoPrecioAnterior!].positivo){
+                            props.setTipoPrecioPositivo(props.dataPrecio.tipoPrecioAnterior!);
+                        }else{
+                            props.setTipoPrecioNegativo(props.dataPrecio.tipoPrecioAnterior!);    
+                        }
+                        
                     }}>{FLECHATIPOPRECIO}</td>
                 :
                     <td className="flechaTP"></td>
@@ -348,7 +353,7 @@ function PreciosRow(props:{
                             No borrar
                         </Button>
                         <Button onClick={()=>{
-                            props.setearTipoPrecioNegativo(tipoDePrecioNegativoAConfirmar!)
+                            props.setTipoPrecioNegativo(tipoDePrecioNegativoAConfirmar!)
                             setDeshabilitarPrecio(true);
                             setMenuConfirmarBorradoPrecio(false)
                         }} color="secondary" variant="outlined">
@@ -467,7 +472,7 @@ export function PruebaRelevamientoPrecios(){
                     myDataPrecio.tipoPrecio=tipoPrecio
                     updateDataPrecio(myDataPrecio,index);
                 }}
-                setearTipoPrecioNegativo={(tipoDePrecioNegativo:string)=>{
+                setTipoPrecioNegativo={(tipoDePrecioNegativo:string)=>{
                     var myDataPrecio = {... dataPrecio};
                     myDataPrecio.tipoPrecio = tipoDePrecioNegativo;
                     myDataPrecio.precio=null;
