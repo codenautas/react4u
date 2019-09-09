@@ -86,9 +86,9 @@ var dataPreciosInicialCorto:DataPrecio[] = [
         tipoPrecio:'S',
         precio:null,
         atributos:[
-            {atributo:'Marca', valorAnterior:'Unión', valor:'Unión'},
-            {atributo:'Variante', valorAnterior:'Suave sin palo', valor:'Suave sin palo'},
-            {atributo:'Gramaje', valorAnterior:'500', valor:'500'}
+            {atributo:'Marca', valorAnterior:'Unión', valor:null},
+            {atributo:'Variante', valorAnterior:'Suave sin palo', valor:null},
+            {atributo:'Gramaje', valorAnterior:'500', valor:null}
         ],
         cambio: null
     },
