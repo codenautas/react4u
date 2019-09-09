@@ -236,11 +236,10 @@ const AtributosRow = forwardRef(function(props:{
     primerAtributo:boolean, 
     cantidadAtributos:number, 
     ultimoAtributo:boolean,
-    onUpdate:OnUpdate<DataAtributo>, 
     habilitarCopiado:boolean, 
     deshabilitarAtributo:boolean,
     onCopiarAtributos:()=>void,
-    onMarcarCambio:()=>void,
+    onUpdate:(atributo:string, valor:string|null)=>void,
     onWantToMoveForward?:()=>boolean},
     ref:React.Ref<Focusable>
 ){
@@ -257,9 +256,7 @@ const AtributosRow = forwardRef(function(props:{
                 }}>{props.habilitarCopiado?FLECHAATRIBUTOS:props.cambio}</td>
                 :null}
             <EditableTd disabled={props.deshabilitarAtributo} colSpan={2} className="atributo-actual" value={atributo.valor} onUpdate={value=>{
-                atributo.valor=value;
-                props.onMarcarCambio();
-                props.onUpdate(atributo);
+                props.onUpdate(props.dataAtributo.atributo, value)
             }} onWantToMoveForward={props.onWantToMoveForward}
             ref={ref} />
         </tr>
@@ -268,7 +265,13 @@ const AtributosRow = forwardRef(function(props:{
 
 function PreciosRow(props:{
     dataPrecio:DataPrecio, 
-    onUpdate:OnUpdate<DataPrecio>
+    onCopiarAtributos:()=>void,
+    setPrecio:(precio:number|null)=>void,
+    setTipoPrecioPositivo:(tipoPrecio:string)=>void,
+    setearTipoPrecioNegativo:(tipoDePrecioNegativo:string)=>void,
+    marcarCambio:()=>void,
+    updateAtributo:(atributo:string, valor:string|null)=>void
+    onUpdate:(dataPrecio:DataPrecio)=>void,
 }){
     const precioRef = useRef<HTMLInputElement>(null);
     const atributosRef = useRef(props.dataPrecio.atributos.map(() => createRef<HTMLInputElement>()));
@@ -292,8 +295,7 @@ function PreciosRow(props:{
                     && tipoPrecio[props.dataPrecio.tipoPrecioAnterior].copiable
                 ?
                     <td className="flechaTP" onClick={ () => {
-                        props.dataPrecio.tipoPrecio = props.dataPrecio.tipoPrecioAnterior;
-                        props.onUpdate(props.dataPrecio);
+                        props.setTipoPrecioPositivo(props.dataPrecio.tipoPrecioAnterior!);
                     }}>{FLECHATIPOPRECIO}</td>
                 :
                     <td className="flechaTP"></td>
@@ -310,21 +312,17 @@ function PreciosRow(props:{
                     {tiposPrecioDef.map(tpDef=>
                         <MenuItem key={tpDef.tipoPrecio} onClick={()=>{
                             setMenuTipoPrecio(null);
-                            var necesitaConfirmacion = !tipoPrecio[tpDef.tipoPrecio].positivo && props.dataPrecio.precio != null || props.dataPrecio.cambio != null;
+                            var necesitaConfirmacion = !tipoPrecio[tpDef.tipoPrecio].positivo && (props.dataPrecio.precio != null || props.dataPrecio.cambio != null);
                             if(necesitaConfirmacion){
                                 setTipoDePrecioNegativoAConfirmar(tpDef.tipoPrecio);
                                 setMenuConfirmarBorradoPrecio(true)
                             }else{
                                 setDeshabilitarPrecio(!tipoPrecio[tpDef.tipoPrecio].positivo);
-                                props.dataPrecio.tipoPrecio = tpDef.tipoPrecio;
-                                if(precioRef.current && !props.dataPrecio.precio && tipoPrecio[tpDef.tipoPrecio].positivo){
-                                    precioRef.current.focus();
-                                }
+                                props.setTipoPrecioPositivo(tpDef.tipoPrecio);
                             }
-                            /**
-                             * // TODO: REVISAR por qué hacía delay
-                             */
-                            //props.onUpdate(props.dataPrecio);
+                            if(precioRef.current && !props.dataPrecio.precio && tipoPrecio[tpDef.tipoPrecio].positivo){
+                                precioRef.current.focus();
+                            }
                         }}>
                             <ListItemText>{tpDef.tipoPrecio}&nbsp;</ListItemText>
                             <ListItemText>&nbsp;{tpDef.descripcion}</ListItemText>
@@ -350,11 +348,7 @@ function PreciosRow(props:{
                             No borrar
                         </Button>
                         <Button onClick={()=>{
-                            props.dataPrecio.tipoPrecio = tipoDePrecioNegativoAConfirmar;
-                            props.dataPrecio.precio=null;
-                            props.dataPrecio.cambio=null;
-                            props.dataPrecio.atributos.forEach((atrib)=>atrib.valor=null);
-                            props.onUpdate(props.dataPrecio);
+                            props.setearTipoPrecioNegativo(tipoDePrecioNegativoAConfirmar!)
                             setDeshabilitarPrecio(true);
                             setMenuConfirmarBorradoPrecio(false)
                         }} color="secondary" variant="outlined">
@@ -363,11 +357,10 @@ function PreciosRow(props:{
                     </DialogActions>
                 </Dialog>
                 <EditableTd disabled={deshabilitarPrecio} className="precio" value={props.dataPrecio.precio} onUpdate={value=>{
-                    props.dataPrecio.precio=value;
+                    props.setPrecio(value);
                     if(!props.dataPrecio.tipoPrecio && props.dataPrecio.precio){
-                        props.dataPrecio.tipoPrecio=tipoPrecioPredeterminado.tipoPrecio;
+                        props.setTipoPrecioPositivo(tipoPrecioPredeterminado.tipoPrecio);
                     }
-                    props.onUpdate(props.dataPrecio);
                     if(precioRef.current!=null){
                         precioRef.current.blur()
                     }
@@ -382,30 +375,15 @@ function PreciosRow(props:{
                     deshabilitarAtributo={deshabilitarPrecio}
                     cantidadAtributos={props.dataPrecio.atributos.length}
                     ultimoAtributo={index == props.dataPrecio.atributos.length-1}
-                    onUpdate={(modifAtributo)=>{
-                        props.dataPrecio.atributos.splice(index,1,modifAtributo);
-                        props.onUpdate(props.dataPrecio);
-                        
-                    }}
                     onCopiarAtributos={()=>{
-                        if(habilitarCopiado){
-                            props.dataPrecio.atributos.forEach((atrib)=>
-                                atrib.valor = atrib.valorAnterior
-                            )
-                            props.dataPrecio.cambio='=';
-                            if(!props.dataPrecio.precio && precioRef.current){
-                                precioRef.current.focus();
-                            }
-                            props.dataPrecio.tipoPrecio=tipoPrecioPredeterminado.tipoPrecio;
-                            props.onUpdate(props.dataPrecio);
+                        props.onCopiarAtributos()
+                        if(!props.dataPrecio.precio && precioRef.current){
+                            precioRef.current.focus();
                         }
                     }}
-                    onMarcarCambio={()=>{
-                        let atributosIguales = props.dataPrecio.atributos.filter((atrib)=>
-                            atrib.valorAnterior == atrib.valor
-                        );
-                        props.dataPrecio.cambio=(atributosIguales.length == props.dataPrecio.atributos.length)?'=':'C';
-                        props.onUpdate(props.dataPrecio);
+                    onUpdate={(atributo:string, valor:string|null)=>{
+                        props.updateAtributo(atributo,valor)
+                        props.marcarCambio();
                     }}
                     onWantToMoveForward={()=>{
                         if(index<props.dataPrecio.atributos.length-1){
@@ -433,6 +411,9 @@ function PreciosRow(props:{
 
 export function PruebaRelevamientoPrecios(){
     const [dataPrecios, setDataPrecios] = useState(dataPreciosInicial);
+    const updateDataPrecio = function updateDataPrecio(dataPrecio:DataPrecio,index:number){
+        setDataPrecios([...dataPrecios.slice(0,index), dataPrecio, ...dataPrecios.slice(index+1)])
+    }
     const ref = useRef<HTMLTableElement>(null);
     useEffect(()=>{
         if(ref.current){
@@ -464,8 +445,54 @@ export function PruebaRelevamientoPrecios(){
                 </tr>
             </thead>
             {dataPrecios.map((dataPrecio,index) =>
-                <PreciosRow key={index} dataPrecio={dataPrecio} onUpdate={
-                    (updatedPrecio)=>setDataPrecios([...dataPrecios.slice(0,index), updatedPrecio, ...dataPrecios.slice(index+1)])
+                <PreciosRow key={index} dataPrecio={dataPrecio} 
+                onCopiarAtributos={()=>{
+                    var myDataPrecio = {... dataPrecio};
+                    myDataPrecio.atributos.forEach((atrib)=>
+                        atrib.valor = atrib.valorAnterior
+                    )
+                    myDataPrecio.cambio='=';
+                    if(!myDataPrecio.tipoPrecio){
+                        myDataPrecio.tipoPrecio=tipoPrecioPredeterminado.tipoPrecio;
+                    }
+                    updateDataPrecio(myDataPrecio,index);
+                }}
+                setPrecio={(precio:number|null)=>{
+                    var myDataPrecio = {... dataPrecio};
+                    myDataPrecio.precio=precio
+                    updateDataPrecio(myDataPrecio,index);
+                }}
+                setTipoPrecioPositivo={(tipoPrecio:string)=>{
+                    var myDataPrecio = {... dataPrecio};
+                    myDataPrecio.tipoPrecio=tipoPrecio
+                    updateDataPrecio(myDataPrecio,index);
+                }}
+                setearTipoPrecioNegativo={(tipoDePrecioNegativo:string)=>{
+                    var myDataPrecio = {... dataPrecio};
+                    myDataPrecio.tipoPrecio = tipoDePrecioNegativo;
+                    myDataPrecio.precio=null;
+                    myDataPrecio.cambio=null;
+                    myDataPrecio.atributos.forEach((atrib)=>atrib.valor=null);
+                    updateDataPrecio(myDataPrecio,index);
+                }}
+                marcarCambio={()=>{
+                    var myDataPrecio = {... dataPrecio};
+                    let atributosIguales = myDataPrecio.atributos.filter((atrib)=>
+                        atrib.valorAnterior == atrib.valor
+                    );
+                    myDataPrecio.cambio=(atributosIguales.length == myDataPrecio.atributos.length)?'=':'C';
+                    updateDataPrecio(myDataPrecio,index);
+                }}
+                updateAtributo={(atributo:string, valor:string|null)=>{
+                    var myDataPrecio = {... dataPrecio};
+                    let atributoByName = myDataPrecio.atributos.find((atrib)=>
+                        atrib.atributo == atributo
+                    )!;
+                    atributoByName.valor=valor
+                    updateDataPrecio(myDataPrecio,index);
+                }}
+                onUpdate={
+                    (dataPrecioForUpdate:DataPrecio)=>updateDataPrecio(dataPrecioForUpdate,index)
                 }></PreciosRow>
             )}
         </table>
