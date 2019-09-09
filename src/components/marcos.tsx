@@ -1,8 +1,10 @@
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppBar, Menu, MenuItem, Toolbar, Button, IconButton } from "@material-ui/core";
 import { makeStyles, SvgIcon, Typography } from "@material-ui/core";
 import { Drawer, List, ListItem, ListItemText, ListItemIcon } from "@material-ui/core";
+
+import * as likeAr from "like-ar";
 
 const MENUTYPE:'simple'|'draw'='draw';
 
@@ -47,10 +49,39 @@ export const materialIoIconsSvgPath:{[k:string]:string}={
     Menu:"M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"
 }
 
+function splitVariables(line:string){
+    return (
+        likeAr(line.slice(line[0]=='?' || line[0]=='#'?1:0).split('&'))
+        .build<(string|boolean), string>((asignacion:string)=>{
+            const eqPosition = asignacion.indexOf('=');
+            return eqPosition ? {[asignacion.substr(0,eqPosition)]:asignacion.substr(eqPosition+1)} : {[asignacion]: true}
+        })
+    );
+}
+
 export function Application(props:{children:Children[]}){
     const classes = useStyles();
     const [drawOpened, setDrawOpened] = React.useState(false);
-    const [selectedPage, setSelectedPage] = useState<string>('main')
+    const locationParts=splitVariables(location.hash);
+    console.log(locationParts);
+    const [selectedPage, setSelectedPage] = useState<string>(locationParts.w||'main')
+    useEffect(()=>{
+        if(selectedPage){
+            location.hash='w='+selectedPage;
+        }else{
+            location.hash='';
+        }
+        const onHashChange = function (){
+            const locationParts=splitVariables(location.hash);
+            if(locationParts.w && locationParts.w != selectedPage){
+                setSelectedPage(locationParts.w);
+            }
+        };
+        window.addEventListener('hashchange', onHashChange);
+        return function cleanUp(){
+            window.removeEventListener('hashchange', onHashChange)
+        }
+    })
     const [hamburguerMenu, setHamburguerMenu] = useState<HTMLButtonElement|null>(null);
     const toggleDrawer = (open: boolean) => (
         event: React.KeyboardEvent | React.MouseEvent,
@@ -82,7 +113,7 @@ export function Application(props:{children:Children[]}){
         </AppBar>
         {props.children.map(child=>
             child.props.page && child.props.children?
-                <Conditional visible={child.props.page==selectedPage}>{child}</Conditional>
+                <Conditional key={child.props.page} visible={child.props.page==selectedPage}>{child}</Conditional>
             :child
         )}
         <Drawer open={drawOpened} onClose={toggleDrawer(false)}>
@@ -120,7 +151,7 @@ export function Application(props:{children:Children[]}){
         >
             {props.children.map(child=>
                 child.props.page?
-                    <MenuItem onClick={()=>{
+                    <MenuItem key={child.props.page} onClick={()=>{
                         setSelectedPage(child.props.page) ; setHamburguerMenu(null);
                     }}>
                         {child.props.menuLabel||child.props.page}
