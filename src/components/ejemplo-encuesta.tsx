@@ -1,5 +1,6 @@
 import * as React from "react";
 import {useState} from "react";
+import { TextField } from "@material-ui/core"
 
 type TipoDato='string'|'number';
 
@@ -96,14 +97,17 @@ function RowOpciones(props:{opcion:Opciones, elegida:boolean, onSelect:()=>void}
 }
 
 function RowPregunta(props:{pregunta:Pregunta}){
-    const [opcionElegida, setOpcionElegida] = useState<number|null>(null);
+    const [numRespuesta, setNumRespuesta] = useState<number|null>(null);
+    const [textRespuesta, setTextRespuesta] = useState<string|null>(null);
     const pregunta = props.pregunta;
+    const changeNumRespuesta = (event:any)=>setNumRespuesta(Number(event.currentTarget.value));
+    const changeTextRespuesta = (event:any)=>setTextRespuesta(event.currentTarget.value);
     return (
         <tr tipo-pregunta={pregunta.tipoPregunta}>
             <td className="pregunta-id"><div>{pregunta.id}</div>
                 {'opciones' in pregunta?
-                    <input className="opcion-data-entry" value={opcionElegida||''}
-                        onChange={event=>setOpcionElegida(Number(event.currentTarget.value))}
+                    <input className="opcion-data-entry" value={numRespuesta||''}
+                        onChange={changeNumRespuesta}
                     />
                 :null}
             </td>
@@ -114,11 +118,22 @@ function RowPregunta(props:{pregunta:Pregunta}){
                 :null}
                 {'opciones' in pregunta?
                     <table><tbody>{pregunta.opciones.map(opcion=>
-                        <RowOpciones key={opcion.opcion} opcion={opcion} elegida={opcion.opcion==opcionElegida}
-                            onSelect={()=>setOpcionElegida(opcion.opcion)}
+                        <RowOpciones key={opcion.opcion} opcion={opcion} elegida={opcion.opcion==numRespuesta}
+                            onSelect={()=>setNumRespuesta(opcion.opcion)}
                         />
                     )}</tbody></table>
-                :null}
+                :<TextField
+                    id="standard-number"
+                    value={numRespuesta}
+                    onChange={changeTextRespuesta}
+                    type={pregunta.tipoDato=="string"?"text":"number"}
+                    InputLabelProps={{
+                        shrink: true,
+                    }}
+                    margin="normal"
+                    fullWidth={pregunta.tipoDato=="string"}
+                />
+                }
             </td>
         </tr>
     )
