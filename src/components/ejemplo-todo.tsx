@@ -3,6 +3,7 @@ import { useState } from "react";
 import { createStore } from "redux";
 import { Provider, useSelector, useDispatch } from "react-redux"; 
 import { Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button } from "@material-ui/core";
+import { deepFreeze } from "best-globals";
 
 ///////// ESTADO:
 type TodoTask={
@@ -38,7 +39,7 @@ function todoReducer(state:TodoState = initialState, action:TodoAction) {
     switch (action.type) {
         case ADD_TODO: {
         const { id, content } = action.payload;
-        return {
+        return deepFreeze({
             ...state,
             allIds: [...state.allIds, id],
             byIds: {
@@ -48,12 +49,12 @@ function todoReducer(state:TodoState = initialState, action:TodoAction) {
                     completed: false
                 }
             }
-        };
+        });
     }
     case TOGGLE_TODO: {
         const { id } = action.payload;
         var selTask = state.byIds[id];
-        return {
+        return deepFreeze({
             ...state,
             byIds:{
                 ...state.byIds,
@@ -62,10 +63,10 @@ function todoReducer(state:TodoState = initialState, action:TodoAction) {
                     completed: !selTask.completed
                 }
             }
-        };
+        });
     }
     default:
-        return state;
+        return deepFreeze(state);
     }
 }
 
