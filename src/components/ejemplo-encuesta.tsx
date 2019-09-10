@@ -1,7 +1,12 @@
 import * as React from "react";
 import {useState} from "react";
+import { createStore } from "redux"
+import { Provider, useSelector, useDispatch } from "react-redux"
 import { TextField, Switch, FormControlLabel } from "@material-ui/core"
 import * as likeAr from "like-ar";
+import { deepFreeze } from "best-globals"
+
+/////// ESTRUCTURA
 
 type TipoDato='string'|'number';
 
@@ -17,7 +22,8 @@ type Pregunta = {
     texto:string,
     aclaracion?:string,
     tipoPregunta?:string,
-    salto?:string
+    salto?:string,
+    posicion?:number
 }&({
     opciones: Opciones[]
 }|{
@@ -85,7 +91,58 @@ var estructura:Pregunta[]=[{
     aclaracion:'Registre el producto principal que produce o los servicios que presta el establecimiento en el que trabaja. Para los trabajadores por cuenta propia, el establecimiento es la misma actividad que realizan', 
     tipoPregunta:'E-A',
     tipoDato:'string'
-}]
+}];
+
+estructura.forEach(function(pregunta,i){
+    pregunta.posicion=i;
+})
+
+const indexPregunta = likeAr.createIndex(estructura,'id');
+
+/////// DATOS
+
+var respuestas = likeAr(likeAr.createIndex(estructura,'id')).map(_=>null);
+
+////////// CONTROLADOR: React
+
+type EstadoEncuestas={
+    respuestas:{[varName:string]:any},
+    preguntaActual:string, // la siguiene a la última respondida
+    modoIngresador:boolean,
+    modoDebug:boolean,
+}
+
+const estadoInicial=/*deepFreeze*/({
+    respuestas, 
+    preguntaActual:estructura[0].id,
+    modoIngresador:true,
+    modoDebug:true
+});
+
+type Accion = { type:string } & (
+    {type:'MODO_INGRESADOR', valor:boolean} | 
+    {type:'MODO_DEBUG', valor:boolean} |
+    {type:'PROXIMA_PREGUNTA', pregunta:string} |
+    {type:'REGISTRAR_RESPUESTA', pregunta:string, respuesta:any} 
+)
+
+function reduxEncuestas(estadoAnterior:EstadoEncuestas = estadoInicial, accion:Accion){
+    switch(accion.type){
+    case 'MODO_INGRESADOR':
+        return {...estadoAnterior, modoIngresador:accion.valor}
+    case 'MODO_DEBUG':
+        return {...estadoAnterior, modoDebug:accion.valor}
+    case 'PROXIMA_PREGUNTA':
+        return {...estadoAnterior, preguntaActual:accion.pregunta}
+    case 'REGISTRAR_RESPUESTA':
+        return {...estadoAnterior, respuestas:{...estadoAnterior.respuestas, [accion.pregunta]:accion.respuesta}}
+    }
+    return {...estadoAnterior};
+}
+
+const store = createStore(reduxEncuestas)
+
+////////// VISTA
 
 function RowOpciones(props:{opcion:Opciones, elegida:boolean, onSelect:()=>void}){
     return (
@@ -97,23 +154,24 @@ function RowOpciones(props:{opcion:Opciones, elegida:boolean, onSelect:()=>void}
     )
 }
 
-function RowPregunta(props:{pregunta:Pregunta, modoIngresador:boolean, onUpdate:(value:any)=>void}){
-    const [numRespuesta, setNumRespuesta] = useState<number|null>(null);
-    const [textRespuesta, setTextRespuesta] = useState<string|null>(null);
-    const pregunta = props.pregunta;
+function RowPregunta(props:{key:string, preguntaId:string}){
+    const estadoPregunta = useSelector((estado:EstadoEncuestas) => 
+        ({modoIngresador:estado.modoIngresador, respuesta:estado.respuestas[props.preguntaId] }
+    ));
+    const pregunta = indexPregunta[props.preguntaId];
     const changeNumRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
-        props.onUpdate(Number(event.currentTarget.value));
-        setNumRespuesta(Number(event.currentTarget.value));
+        const valor = Number(event.currentTarget.value);
+        /// TODO: cambiar
     };
     const changeTextRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
-        props.onUpdate(event.currentTarget.value);
-        setTextRespuesta(event.currentTarget.value)
+        const valor = event.currentTarget.value;
+        /// TODO: cambiar
     };
     return (
         <tr tipo-pregunta={pregunta.tipoPregunta}>
             <td className="pregunta-id"><div>{pregunta.id}</div>
                 {'opciones' in pregunta?
-                    (props.modoIngresador?<input className="opcion-data-entry" value={numRespuesta||''}
+                    (estadoPregunta.modoIngresador?<input className="opcion-data-entry" value={estadoPregunta.respuesta||''}
                         onChange={changeNumRespuesta}
                     />:null)
                 :null}
@@ -125,16 +183,16 @@ function RowPregunta(props:{pregunta:Pregunta, modoIngresador:boolean, onUpdate:
                 :null}
                 {'opciones' in pregunta?
                     <table><tbody>{pregunta.opciones.map(opcion=>
-                        <RowOpciones key={opcion.opcion} opcion={opcion} elegida={opcion.opcion==numRespuesta}
-                            onSelect={()=>{
+                        <RowOpciones key={opcion.opcion} opcion={opcion} elegida={opcion.opcion==estadoPregunta.respuesta}
+                            onSelect={()=>{/*
                                 setNumRespuesta(opcion.opcion);
                                 props.onUpdate(Number(opcion.opcion));
-                            }}
+                            */}}
                         />
                     )}</tbody></table>
                 :<TextField
                     id="standard-number"
-                    value={pregunta.tipoDato=="string"?textRespuesta||'':numRespuesta||0}
+                    value={estadoPregunta.respuesta==null?(pregunta.tipoDato=="string"?'':0):estadoPregunta.respuesta}
                     onChange={pregunta.tipoDato=="string"?changeTextRespuesta:changeNumRespuesta}
                     type={pregunta.tipoDato=="string"?"text":"number"}
                     InputLabelProps={{
@@ -149,18 +207,17 @@ function RowPregunta(props:{pregunta:Pregunta, modoIngresador:boolean, onUpdate:
     )
 }
 
-export function ProbarFormularioEncuesta(props:{}){
-    const [modoIngresador, setModoIngresador] = useState<boolean>(true)
-    const [modoDebug, setModoDebug] = useState<boolean>(true)
-    const [respuestas, setRespuestas] = useState<any>(likeAr(likeAr.createIndex(estructura,'id')).map(_=>null));
+function FormularioEncuesta(){
+    const estado = useSelector((estado:EstadoEncuestas)=>estado);
+    const dispatch = useDispatch();
     return (
         <table className="ejemplo-encuesta">
             <caption>Formulario Encuesta
                 <FormControlLabel
                     control={
                         <Switch
-                            checked={modoIngresador}
-                            onChange={(event:React.ChangeEvent<HTMLInputElement>)=>setModoIngresador(event.currentTarget.checked)}
+                            checked={estado.modoIngresador}
+                            onChange={event=>dispatch({type:'MODO_INGRESADOR', value:!!event.currentTarget.checked})}
                             value="checkedB"
                             color="primary"
                         />
@@ -170,8 +227,8 @@ export function ProbarFormularioEncuesta(props:{}){
                 <FormControlLabel
                     control={
                         <Switch
-                            checked={modoDebug}
-                            onChange={(event:React.ChangeEvent<HTMLInputElement>)=>setModoDebug(event.currentTarget.checked)}
+                            checked={estado.modoDebug}
+                            onChange={event=>dispatch({type:'MODO_DEBUG', value:!!event.currentTarget.checked})}
                             value="checkedB"
                             color="secondary"
                         />
@@ -181,22 +238,27 @@ export function ProbarFormularioEncuesta(props:{}){
             </caption>
             <tbody>
                 {estructura.map(pregunta=>
-                    <RowPregunta key={pregunta.id} pregunta={pregunta} modoIngresador={modoIngresador}
-                        onUpdate={(valor:any)=>{
-                            setRespuestas({...respuestas, [pregunta.id]:valor});
-                        }}
-                    />
+                    <RowPregunta key={pregunta.id} preguntaId={pregunta.id}/>
                 )}
             </tbody>
             <tfoot>
                 <tr>
                     <td colSpan={99}>
                         <pre>
-                            {modoDebug?JSON.stringify(respuestas,null,'  '):null}
+                            {estado.modoDebug?JSON.stringify(estado,null,'  '):null}
                         </pre>
                     </td>
                 </tr>
             </tfoot>
         </table>
+
+    )
+}
+
+export function ProbarFormularioEncuesta(props:{}){
+    return (
+        <Provider store={store}>
+            <FormularioEncuesta/>
+        </Provider>
     );
 }
