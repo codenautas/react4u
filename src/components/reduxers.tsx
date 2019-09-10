@@ -1,3 +1,6 @@
+console.log('provisorio')
+/*
+
 function example(s:string, n:number):string[]{
     return ['hola'];
 }
@@ -39,3 +42,4 @@ function todos(state = [], action) {
     return state;
   }
 }
+*/
