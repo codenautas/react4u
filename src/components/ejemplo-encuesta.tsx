@@ -1,6 +1,7 @@
 import * as React from "react";
 import {useState} from "react";
 import { TextField, Switch, FormControlLabel } from "@material-ui/core"
+import * as likeAr from "like-ar";
 
 type TipoDato='string'|'number';
 
@@ -96,12 +97,18 @@ function RowOpciones(props:{opcion:Opciones, elegida:boolean, onSelect:()=>void}
     )
 }
 
-function RowPregunta(props:{pregunta:Pregunta, modoIngresador:boolean}){
+function RowPregunta(props:{pregunta:Pregunta, modoIngresador:boolean, onUpdate:(value:any)=>void}){
     const [numRespuesta, setNumRespuesta] = useState<number|null>(null);
     const [textRespuesta, setTextRespuesta] = useState<string|null>(null);
     const pregunta = props.pregunta;
-    const changeNumRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>setNumRespuesta(Number(event.currentTarget.value));
-    const changeTextRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>setTextRespuesta(event.currentTarget.value);
+    const changeNumRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
+        props.onUpdate(Number(event.currentTarget.value));
+        setNumRespuesta(Number(event.currentTarget.value));
+    };
+    const changeTextRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
+        props.onUpdate(event.currentTarget.value);
+        setTextRespuesta(event.currentTarget.value)
+    };
     return (
         <tr tipo-pregunta={pregunta.tipoPregunta}>
             <td className="pregunta-id"><div>{pregunta.id}</div>
@@ -119,13 +126,16 @@ function RowPregunta(props:{pregunta:Pregunta, modoIngresador:boolean}){
                 {'opciones' in pregunta?
                     <table><tbody>{pregunta.opciones.map(opcion=>
                         <RowOpciones key={opcion.opcion} opcion={opcion} elegida={opcion.opcion==numRespuesta}
-                            onSelect={()=>setNumRespuesta(opcion.opcion)}
+                            onSelect={()=>{
+                                setNumRespuesta(opcion.opcion);
+                                props.onUpdate(Number(opcion.opcion));
+                            }}
                         />
                     )}</tbody></table>
                 :<TextField
                     id="standard-number"
-                    value={numRespuesta}
-                    onChange={changeTextRespuesta}
+                    value={pregunta.tipoDato=="string"?textRespuesta||'':numRespuesta||0}
+                    onChange={pregunta.tipoDato=="string"?changeTextRespuesta:changeNumRespuesta}
                     type={pregunta.tipoDato=="string"?"text":"number"}
                     InputLabelProps={{
                         shrink: true,
@@ -141,6 +151,8 @@ function RowPregunta(props:{pregunta:Pregunta, modoIngresador:boolean}){
 
 export function ProbarFormularioEncuesta(props:{}){
     const [modoIngresador, setModoIngresador] = useState<boolean>(true)
+    const [modoDebug, setModoDebug] = useState<boolean>(true)
+    const [respuestas, setRespuestas] = useState<any>(likeAr(likeAr.createIndex(estructura,'id')).map(_=>null));
     return (
         <table className="ejemplo-encuesta">
             <caption>Formulario Encuesta
@@ -155,12 +167,36 @@ export function ProbarFormularioEncuesta(props:{}){
                     }
                     label="modo Ingresador"
                 />
+                <FormControlLabel
+                    control={
+                        <Switch
+                            checked={modoDebug}
+                            onChange={(event:React.ChangeEvent<HTMLInputElement>)=>setModoDebug(event.currentTarget.checked)}
+                            value="checkedB"
+                            color="secondary"
+                        />
+                    }
+                    label="modo Debug"
+                />
             </caption>
             <tbody>
                 {estructura.map(pregunta=>
-                    <RowPregunta key={pregunta.id} pregunta={pregunta} modoIngresador={modoIngresador}/>
+                    <RowPregunta key={pregunta.id} pregunta={pregunta} modoIngresador={modoIngresador}
+                        onUpdate={(valor:any)=>{
+                            setRespuestas({...respuestas, [pregunta.id]:valor});
+                        }}
+                    />
                 )}
             </tbody>
+            <tfoot>
+                <tr>
+                    <td colSpan={99}>
+                        <pre>
+                            {modoDebug?JSON.stringify(respuestas,null,'  '):null}
+                        </pre>
+                    </td>
+                </tr>
+            </tfoot>
         </table>
     );
 }
