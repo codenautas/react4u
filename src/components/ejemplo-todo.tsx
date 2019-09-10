@@ -1,7 +1,8 @@
 import * as React from "react";
+import { useState } from "react";
 import { createStore } from "redux";
 import { Provider, useSelector, useDispatch } from "react-redux"; 
-import { SvgIcon } from "@material-ui/core";
+import { Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button } from "@material-ui/core";
 
 ///////// ESTADO:
 type TodoTask={
@@ -85,12 +86,63 @@ function TodoTaskRow(props:{id:string}){
     </>;
 }
 
+function TodoAddRow(){
+    const [dialog, setDialog] = useState(false);
+    const dispatch = useDispatch();
+    const handleClose = _=>setDialog(false)
+    return <>
+        <tr className="add-task">
+            <th></th>
+            <th></th>
+            <td onClick={_=>
+                setDialog(true)
+            }>+</td>
+        </tr>
+        <Dialog open={dialog} onClose={handleClose}>
+            <DialogTitle id="form-dialog-title">Subscribe</DialogTitle>
+            <DialogContent>
+                <DialogContentText>
+                    Agregar una nueva tarea
+                </DialogContentText>
+                <TextField
+                    autoFocus
+                    margin="dense"
+                    id="id"
+                    label="id"
+                    type="text"
+                    fullWidth
+                />
+                <TextField
+                    autoFocus
+                    margin="dense"
+                    id="tarea"
+                    label="Tarea"
+                    type="text"
+                    fullWidth
+                />
+            </DialogContent>
+            <DialogActions>
+            <Button onClick={handleClose} color="primary">
+                Cancelar
+            </Button>
+            <Button onClick={_=>{
+                dispatch({type:'ADD_TODO', payload:{id:'T9', content:'lo que se ingreso recién'}})
+                setDialog(false);
+            }} color="primary">
+                Agregar
+            </Button>
+            </DialogActions>        
+        </Dialog>
+    </>;
+}
+
 function TodoViewer(){
     const ids = useSelector((todos:TodoState)=>todos.allIds);
     return <table className="ejemplo-todo">
         {ids.map(id=>
             <TodoTaskRow key={id} id={id}/>
         )}
+        <TodoAddRow/>
     </table>
 }
 
