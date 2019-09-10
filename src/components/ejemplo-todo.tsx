@@ -87,47 +87,52 @@ function TodoTaskRow(props:{id:string}){
 }
 
 function TodoAddRow(){
-    const [dialog, setDialog] = useState(false);
+    const [dialog, setDialog] = useState<{id:string, content?:string}|null>(null);
     const dispatch = useDispatch();
-    const handleClose = _=>setDialog(false)
+    const handleClose = ()=>setDialog(null)
     return <>
         <tr className="add-task">
             <th></th>
             <th></th>
             <td onClick={_=>
-                setDialog(true)
+                setDialog({id:'T'+Math.random().toString().slice(14)})
             }>+</td>
         </tr>
-        <Dialog open={dialog} onClose={handleClose}>
+        <Dialog open={!!dialog} onClose={handleClose}>
             <DialogTitle id="form-dialog-title">Subscribe</DialogTitle>
             <DialogContent>
                 <DialogContentText>
                     Agregar una nueva tarea
                 </DialogContentText>
                 <TextField
-                    autoFocus
                     margin="dense"
                     id="id"
                     label="id"
                     type="text"
-                    fullWidth
+                    value={dialog && dialog!.id}
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                        setDialog({...dialog, id:event.target.value})
+                    }}
                 />
                 <TextField
                     autoFocus
                     margin="dense"
-                    id="tarea"
+                    id="content"
                     label="Tarea"
                     type="text"
                     fullWidth
+                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                        setDialog({...dialog!, content:event.target.value})
+                    }}
                 />
             </DialogContent>
             <DialogActions>
-            <Button onClick={handleClose} color="primary">
+            <Button onClick={handleClose} color="secondary">
                 Cancelar
             </Button>
-            <Button onClick={_=>{
-                dispatch({type:'ADD_TODO', payload:{id:'T9', content:'lo que se ingreso recién'}})
-                setDialog(false);
+            <Button disabled={ dialog==null || !dialog.id || !dialog.content } variant="outlined" onClick={_=>{
+                dispatch({type:'ADD_TODO', payload:dialog})
+                setDialog(null);
             }} color="primary">
                 Agregar
             </Button>
