@@ -13,8 +13,9 @@ type TodoState={
 }
 
 const taskList4Example=[
+    {id:'T1', content: 'instalar Redux', completed:true},
     {id:'T2', content: 'empezar a estudiar Redux', completed:false},
-    {id:'T1', content: 'instalar Redux', completed:false},
+    {id:'T2', content: 'enseñarle a los demás', completed:false},
 ];
 
 const initialState:TodoState = {
@@ -27,22 +28,28 @@ function todoReducer(state:TodoState = initialState){
 
 const store = createStore(todoReducer); 
 
-export function TodoViewer(){
+function TodoTaskRow(props:{todo:TodoTask}){
+    var todo = props.todo;
+    return <>
+        <tr className={todo.completed?"completed":"pending"}>
+            <td>{todo.id}</td>
+            <td>{todo.content}</td>
+        </tr>
+    </>;
+}
+
+function TodoViewer(){
     const todos = useSelector((todos:TodoState)=>todos.taskList);
-    return <table>
+    return <table className="ejemplo-todo">
         {todos.map(todo=>
-            <tr key={todo.id}>
-                <td>{todo.id}</td>
-                <td>{todo.content}</td>
-                <td>{todo.completed?'(listo)':'(en progreso)'}</td>
-            </tr>
+            <TodoTaskRow key={todo.id} todo={todo}/>
         )}
     </table>
 }
 
 export function EjemploTodo(){
     return <>
-        <h1>Este es el ejemplo todo</h1>
+        <h1>TO DO</h1>
         <Provider store={store}>
             <TodoViewer />
         </Provider>,
