@@ -1,6 +1,6 @@
 import * as React from "react";
 import {useState} from "react";
-import { TextField } from "@material-ui/core"
+import { TextField, Switch, FormControlLabel } from "@material-ui/core"
 
 type TipoDato='string'|'number';
 
@@ -96,19 +96,19 @@ function RowOpciones(props:{opcion:Opciones, elegida:boolean, onSelect:()=>void}
     )
 }
 
-function RowPregunta(props:{pregunta:Pregunta}){
+function RowPregunta(props:{pregunta:Pregunta, modoIngresador:boolean}){
     const [numRespuesta, setNumRespuesta] = useState<number|null>(null);
     const [textRespuesta, setTextRespuesta] = useState<string|null>(null);
     const pregunta = props.pregunta;
-    const changeNumRespuesta = (event:any)=>setNumRespuesta(Number(event.currentTarget.value));
-    const changeTextRespuesta = (event:any)=>setTextRespuesta(event.currentTarget.value);
+    const changeNumRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>setNumRespuesta(Number(event.currentTarget.value));
+    const changeTextRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>setTextRespuesta(event.currentTarget.value);
     return (
         <tr tipo-pregunta={pregunta.tipoPregunta}>
             <td className="pregunta-id"><div>{pregunta.id}</div>
                 {'opciones' in pregunta?
-                    <input className="opcion-data-entry" value={numRespuesta||''}
+                    (props.modoIngresador?<input className="opcion-data-entry" value={numRespuesta||''}
                         onChange={changeNumRespuesta}
-                    />
+                    />:null)
                 :null}
             </td>
             <td className="pregunta-box">
@@ -140,12 +140,25 @@ function RowPregunta(props:{pregunta:Pregunta}){
 }
 
 export function ProbarFormularioEncuesta(props:{}){
+    const [modoIngresador, setModoIngresador] = useState<boolean>(true)
     return (
         <table className="ejemplo-encuesta">
-            <caption>Formulario Encuesta</caption>
+            <caption>Formulario Encuesta
+                <FormControlLabel
+                    control={
+                        <Switch
+                            checked={modoIngresador}
+                            onChange={(event:React.ChangeEvent<HTMLInputElement>)=>setModoIngresador(event.currentTarget.checked)}
+                            value="checkedB"
+                            color="primary"
+                        />
+                    }
+                    label="modo Ingresador"
+                />
+            </caption>
             <tbody>
                 {estructura.map(pregunta=>
-                    <RowPregunta key={pregunta.id} pregunta={pregunta} />
+                    <RowPregunta key={pregunta.id} pregunta={pregunta} modoIngresador={modoIngresador}/>
                 )}
             </tbody>
         </table>
