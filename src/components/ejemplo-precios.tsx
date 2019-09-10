@@ -1,6 +1,6 @@
 import * as React from "react";
 import {useState, useRef, useEffect, useImperativeHandle, createRef, forwardRef} from "react";
-import {changing} from "best-globals";
+import {changing, deepFreeze} from "best-globals";
 import * as likeAr from "like-ar";
 import {Menu, MenuItem, ListItemText, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle} from "@material-ui/core";
 
@@ -93,6 +93,20 @@ var dataPreciosInicialCorto:DataPrecio[] = [
         cambio: null
     },
     {
+        producto:'Azucar',
+        especificacion:'Azucar blanca de 900 a 1200g en bolsa de plástico o papel',
+        tipoPrecioAnterior:'S',
+        precioAnterior:null,
+        tipoPrecio:null,
+        precio:null,
+        atributos:[
+            {atributo:'Marca'  , valorAnterior:'Ledesma', valor:null},
+            {atributo:'Envase' , valorAnterior:'papel'  , valor:null},
+            {atributo:'Gramaje', valorAnterior:'1000'   , valor:null}
+        ],
+        cambio: null
+    },
+    {
         producto:'Leche entera en sachet',
         especificacion:'Leche entera en sachet de 1 litro sin adhitivos ni vitaminas',
         tipoPrecioAnterior:'P',
@@ -151,6 +165,8 @@ var dataPreciosInicial=[...dataPreciosInicialCorto,
 while(dataPreciosInicial.length<100){
     dataPreciosInicial.push(changing(dataPreciosInicialCorto[Math.floor(Math.random()*dataPreciosInicialCorto.length)],{}));
 }
+
+deepFreeze(dataPreciosInicial);
 
 type OnUpdate<T> = (data:T)=>void
 
@@ -269,7 +285,6 @@ function PreciosRow(props:{
     setPrecio:(precio:number|null)=>void,
     setTipoPrecioPositivo:(tipoPrecio:string)=>void,
     setTipoPrecioNegativo:(tipoDePrecioNegativo:string)=>void,
-    marcarCambio:()=>void,
     updateAtributo:(atributo:string, valor:string|null)=>void
     onUpdate:(dataPrecio:DataPrecio)=>void,
 }){
@@ -388,7 +403,6 @@ function PreciosRow(props:{
                     }}
                     onUpdate={(atributo:string, valor:string|null)=>{
                         props.updateAtributo(atributo,valor)
-                        props.marcarCambio();
                     }}
                     onWantToMoveForward={()=>{
                         if(index<props.dataPrecio.atributos.length-1){
@@ -417,7 +431,7 @@ function PreciosRow(props:{
 export function PruebaRelevamientoPrecios(){
     const [dataPrecios, setDataPrecios] = useState(dataPreciosInicial);
     const updateDataPrecio = function updateDataPrecio(dataPrecio:DataPrecio,index:number){
-        setDataPrecios([...dataPrecios.slice(0,index), dataPrecio, ...dataPrecios.slice(index+1)])
+        setDataPrecios(deepFreeze([...dataPrecios.slice(0,index), dataPrecio, ...dataPrecios.slice(index+1)]))
     }
     const ref = useRef<HTMLTableElement>(null);
     useEffect(()=>{
@@ -452,49 +466,45 @@ export function PruebaRelevamientoPrecios(){
             {dataPrecios.map((dataPrecio,index) =>
                 <PreciosRow key={index} dataPrecio={dataPrecio} 
                 onCopiarAtributos={()=>{
-                    var myDataPrecio = {... dataPrecio};
-                    myDataPrecio.atributos.forEach((atrib)=>
-                        atrib.valor = atrib.valorAnterior
-                    )
-                    myDataPrecio.cambio='=';
-                    if(!myDataPrecio.tipoPrecio){
-                        myDataPrecio.tipoPrecio=tipoPrecioPredeterminado.tipoPrecio;
-                    }
+                    var myDataPrecio = {
+                        ...dataPrecio,
+                        atributos: dataPrecio.atributos.map(atrib=>{
+                            return {...atrib, valor:atrib.valorAnterior}
+                        }),
+                        cambio:'=',
+                        tipoPrecio:dataPrecio.tipoPrecio||tipoPrecioPredeterminado.tipoPrecio,
+                    };
                     updateDataPrecio(myDataPrecio,index);
                 }}
                 setPrecio={(precio:number|null)=>{
-                    var myDataPrecio = {... dataPrecio};
-                    myDataPrecio.precio=precio
-                    updateDataPrecio(myDataPrecio,index);
+                    updateDataPrecio({...dataPrecio, precio},index);
                 }}
                 setTipoPrecioPositivo={(tipoPrecio:string)=>{
-                    var myDataPrecio = {... dataPrecio};
-                    myDataPrecio.tipoPrecio=tipoPrecio
-                    updateDataPrecio(myDataPrecio,index);
+                    updateDataPrecio({...dataPrecio, tipoPrecio},index);
                 }}
                 setTipoPrecioNegativo={(tipoDePrecioNegativo:string)=>{
-                    var myDataPrecio = {... dataPrecio};
-                    myDataPrecio.tipoPrecio = tipoDePrecioNegativo;
-                    myDataPrecio.precio=null;
-                    myDataPrecio.cambio=null;
-                    myDataPrecio.atributos.forEach((atrib)=>atrib.valor=null);
-                    updateDataPrecio(myDataPrecio,index);
-                }}
-                marcarCambio={()=>{
-                    var myDataPrecio = {... dataPrecio};
-                    let atributosIguales = myDataPrecio.atributos.filter((atrib)=>
-                        atrib.valorAnterior == atrib.valor
-                    );
-                    myDataPrecio.cambio=(atributosIguales.length == myDataPrecio.atributos.length)?'=':'C';
+                    var myDataPrecio = {
+                        ...dataPrecio,
+                        tipoPrecio: tipoDePrecioNegativo,
+                        precio: null,
+                        cambio: null,
+                        atributos: dataPrecio.atributos.map(atrib=>{return {...atrib, valor:null}})
+                    };
                     updateDataPrecio(myDataPrecio,index);
                 }}
                 updateAtributo={(atributo:string, valor:string|null)=>{
-                    var myDataPrecio = {... dataPrecio};
-                    let atributoByName = myDataPrecio.atributos.find((atrib)=>
-                        atrib.atributo == atributo
-                    )!;
-                    atributoByName.valor=valor
-                    updateDataPrecio(myDataPrecio,index);
+                    var myDataPrecio = {
+                        ...dataPrecio,
+                        atributos: dataPrecio.atributos.map(atrib=>
+                            atrib.atributo == atributo?{...atrib, valor}:atrib
+                        )
+                    };
+                    updateDataPrecio({
+                        ...myDataPrecio,
+                        cambio: dataPrecio.atributos.find((atrib)=>
+                            atrib.valorAnterior == atrib.valor
+                        )!==null?'C':'='
+                    },index);
                 }}
                 onUpdate={
                     (dataPrecioForUpdate:DataPrecio)=>updateDataPrecio(dataPrecioForUpdate,index)

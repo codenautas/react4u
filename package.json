@@ -17,14 +17,14 @@
     "ts-loader": "^6.0.4",
     "typescript": "^3.6.2",
     "webpack": "^4.39.3",
-    "webpack-cli": "^3.3.7",
+    "webpack-cli": "^3.3.8",
     "server4test": "^0.5.1",
     "types.d.ts": "^0.4.8"
   },
   "dependencies": {
-    "@material-ui/core": "~4.4.0",
+    "@material-ui/core": "~4.4.1",
     "ajax-best-promise": "^0.3.7",
-    "best-globals": "^0.10.22",
+    "best-globals": "^0.10.23",
     "like-ar": "^0.2.16",
     "react": "^16.9.0",
     "react-dom": "^16.9.0"
