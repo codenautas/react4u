@@ -3,23 +3,24 @@ import { createStore } from "redux";
 import { Provider, useSelector } from "react-redux"; 
 
 type TodoTask={
-    id:string
     content:string
     completed:boolean
 };
 
 type TodoState={
-    taskList:TodoTask[],
+    allIds:string[]
+    byIds:{[id:string]:TodoTask},
 }
 
-const taskList4Example=[
-    {id:'T1', content: 'instalar Redux', completed:true},
-    {id:'T2', content: 'empezar a estudiar Redux', completed:false},
-    {id:'T2', content: 'enseñarle a los demás', completed:false},
-];
+const taskList4Example={
+    T1: {content: 'instalar Redux', completed:true},
+    T2: {content: 'empezar a estudiar Redux', completed:false},
+    T3: {content: 'enseñarle a los demás', completed:false},
+};
 
 const initialState:TodoState = {
-    taskList:taskList4Example,
+    allIds: Object.keys(taskList4Example),
+    byIds:  taskList4Example
 };
 
 function todoReducer(state:TodoState = initialState){
@@ -28,21 +29,21 @@ function todoReducer(state:TodoState = initialState){
 
 const store = createStore(todoReducer); 
 
-function TodoTaskRow(props:{todo:TodoTask}){
-    var todo = props.todo;
+function TodoTaskRow(props:{id:string}){
+    const task = useSelector((todos:TodoState)=>todos.byIds[props.id]);
     return <>
-        <tr className={todo.completed?"completed":"pending"}>
-            <td>{todo.id}</td>
-            <td>{todo.content}</td>
+        <tr className={task.completed?"completed":"pending"}>
+            <td>{props.id}</td>
+            <td>{task.content}</td>
         </tr>
     </>;
 }
 
 function TodoViewer(){
-    const todos = useSelector((todos:TodoState)=>todos.taskList);
+    const ids = useSelector((todos:TodoState)=>todos.allIds);
     return <table className="ejemplo-todo">
-        {todos.map(todo=>
-            <TodoTaskRow key={todo.id} todo={todo}/>
+        {ids.map(id=>
+            <TodoTaskRow key={id} id={id}/>
         )}
     </table>
 }
