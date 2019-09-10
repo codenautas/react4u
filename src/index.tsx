@@ -7,6 +7,7 @@ import { PruebaRelevamientoPrecios } from "./components/ejemplo-precios";
 import { ProbarFormularioEncuesta } from "./components/ejemplo-encuesta"
 import { HolaMundo } from "./components/ejemplo-concepto"
 import { RenderDirectJsonApp } from "./components/json-viewer"
+import { EjemploTodo } from "./components/ejemplo-todo";
 import { CssBaseline } from "@material-ui/core";
 
 function ExampleApplication(){
@@ -19,6 +20,9 @@ function ExampleApplication(){
         </WScreen>
         <WScreen page='encuesta' iconName="Assignment">
             <ProbarFormularioEncuesta/>
+        </WScreen>
+        <WScreen page='todo' menuLabel='TO DO'>
+            <EjemploTodo/>
         </WScreen>
         <WScreen page='json' menuLabel='json viewer' iconName="Code">
             <RenderDirectJsonApp/>
