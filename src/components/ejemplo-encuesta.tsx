@@ -1,6 +1,8 @@
 import * as React from "react";
 import {useState} from "react";
 
+type TipoDato='string'|'number';
+
 type Opciones = {
     opcion: number,
     texto: string,
@@ -12,14 +14,18 @@ type Pregunta = {
     id:string,
     texto:string,
     aclaracion?:string,
-    tipoPregunta?:string
+    tipoPregunta?:string,
     salto?:string
-    opciones?: Opciones[]
-}
+}&({
+    opciones: Opciones[]
+}|{
+    tipoDato:TipoDato
+});
 
 var estructura:Pregunta[]=[{
     id:'T1',
     texto:'La semana pasada ¿Trabajó al menos una hora?',
+    tipoPregunta:'E-S',
     opciones: [{
         opcion: 1, 
         texto: 'Sí',
@@ -68,32 +74,49 @@ var estructura:Pregunta[]=[{
 },{
     id:'T28',
     texto:'¿Cuántos empleos/ocupaciones tiene?',
-    aclaracion:'En el caso de tener más de un empleo, verifique que no haya trabajado en ninguno durante la semana pasada'
+    aclaracion:'En el caso de tener más de un empleo, verifique que no haya trabajado en ninguno durante la semana pasada',
+    tipoPregunta:'E-A',
+    tipoDato:'number'
+},{
+    id:'T37',
+    texto:'¿A qué se dedica o qué produce el negocio, empresa o institución en la que trabaja?',
+    aclaracion:'Registre el producto principal que produce o los servicios que presta el establecimiento en el que trabaja. Para los trabajadores por cuenta propia, el establecimiento es la misma actividad que realizan', 
+    tipoPregunta:'E-A',
+    tipoDato:'string'
 }]
 
-function RowOpciones(props:{opcion:Opciones}){
+function RowOpciones(props:{opcion:Opciones, elegida:boolean, onSelect:()=>void}){
     return (
-        <tr>
+        <tr className='opciones' es-elegida={props.elegida?"si":"no"} onClick={props.onSelect}>
             <td>{props.opcion.opcion}</td>
-            <td>{props.opcion.texto}</td>
+            <td className='texto-opcion'>{props.opcion.texto}</td>
             <td>{props.opcion.salto}</td>
         </tr>
     )
 }
 
 function RowPregunta(props:{pregunta:Pregunta}){
+    const [opcionElegida, setOpcionElegida] = useState<number|null>(null);
     const pregunta = props.pregunta;
     return (
-        <tr>
-            <td className="pregunta-id"><div>{pregunta.id}</div></td>
+        <tr tipo-pregunta={pregunta.tipoPregunta}>
+            <td className="pregunta-id"><div>{pregunta.id}</div>
+                {'opciones' in pregunta?
+                    <input className="opcion-data-entry" value={opcionElegida||''}
+                        onChange={event=>setOpcionElegida(Number(event.currentTarget.value))}
+                    />
+                :null}
+            </td>
             <td className="pregunta-box">
                 <div className="pregunta-texto">{pregunta.texto}</div>
                 {pregunta.aclaracion?
                     <div className="pregunta-aclaracion">{pregunta.aclaracion}</div>
                 :null}
-                {pregunta.opciones?
+                {'opciones' in pregunta?
                     <table><tbody>{pregunta.opciones.map(opcion=>
-                        <RowOpciones key={opcion.opcion} opcion={opcion}/>
+                        <RowOpciones key={opcion.opcion} opcion={opcion} elegida={opcion.opcion==opcionElegida}
+                            onSelect={()=>setOpcionElegida(opcion.opcion)}
+                        />
                     )}</tbody></table>
                 :null}
             </td>
