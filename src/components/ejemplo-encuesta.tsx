@@ -119,23 +119,32 @@ const estadoInicial=/*deepFreeze*/({
     modoDebug:true
 });
 
-type Accion = { type:string } & (
-    {type:'MODO_INGRESADOR', valor:boolean} | 
-    {type:'MODO_DEBUG', valor:boolean} |
-    {type:'PROXIMA_PREGUNTA', pregunta:string} |
-    {type:'REGISTRAR_RESPUESTA', pregunta:string, respuesta:any} 
-)
+const acciones = {
+    modoIngresador:(params:{valor:boolean})=>(
+        (estadoAnterior:EstadoEncuestas)=>({...estadoAnterior, modoIngresador:params.valor})
+    ),
+    modoDebug:(params:{valor:boolean})=>(
+        (estadoAnterior:EstadoEncuestas)=>({...estadoAnterior, modoDebug:params.valor})
+    ),
+    proximaPregunta:(params:{pregunta:string})=>(
+        (estadoAnterior:EstadoEncuestas)=>({...estadoAnterior, proximaPregunta:params.pregunta})
+    ),
+    registrarRespuesta:(params:{pregunta:string, respuesta:any})=>(
+        (estadoAnterior:EstadoEncuestas)=>(
+            {...estadoAnterior, respuestas:{...estadoAnterior.respuestas, [params.pregunta]:params.respuesta}}
+        )
+    ),
+}
 
-function reduxEncuestas(estadoAnterior:EstadoEncuestas = estadoInicial, accion:Accion){
-    switch(accion.type){
-    case 'MODO_INGRESADOR':
-        return {...estadoAnterior, modoIngresador:accion.valor}
-    case 'MODO_DEBUG':
-        return {...estadoAnterior, modoDebug:accion.valor}
-    case 'PROXIMA_PREGUNTA':
-        return {...estadoAnterior, preguntaActual:accion.pregunta}
-    case 'REGISTRAR_RESPUESTA':
-        return {...estadoAnterior, respuestas:{...estadoAnterior.respuestas, [accion.pregunta]:accion.respuesta}}
+const despacho:typeof acciones = 
+    likeAr(acciones).map(function(_v,name:string){
+        return (params:any)=>({type:name, params});
+    }).plain();
+
+
+function reduxEncuestas(estadoAnterior:EstadoEncuestas = estadoInicial, accion:any){
+    if(accion.type in acciones){
+        return acciones[accion.type](accion.params)(estadoAnterior);
     }
     return {...estadoAnterior};
 }
@@ -217,7 +226,7 @@ function FormularioEncuesta(){
                     control={
                         <Switch
                             checked={estado.modoIngresador}
-                            onChange={event=>dispatch({type:'MODO_INGRESADOR', valor:!!event.currentTarget.checked})}
+                            onChange={event=>dispatch(despacho.modoIngresador({valor:!!event.currentTarget.checked}))}
                             value="checkedB"
                             color="primary"
                         />
@@ -228,7 +237,7 @@ function FormularioEncuesta(){
                     control={
                         <Switch
                             checked={estado.modoDebug}
-                            onChange={event=>dispatch({type:'MODO_DEBUG', valor:!!event.currentTarget.checked})}
+                            onChange={event=>dispatch(despacho.modoDebug({valor:!!event.currentTarget.checked}))}
                             value="checkedB"
                             color="secondary"
                         />
