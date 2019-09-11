@@ -217,7 +217,7 @@ function FormularioEncuesta(){
                     control={
                         <Switch
                             checked={estado.modoIngresador}
-                            onChange={event=>dispatch({type:'MODO_INGRESADOR', value:!!event.currentTarget.checked})}
+                            onChange={event=>dispatch({type:'MODO_INGRESADOR', valor:!!event.currentTarget.checked})}
                             value="checkedB"
                             color="primary"
                         />
@@ -228,7 +228,7 @@ function FormularioEncuesta(){
                     control={
                         <Switch
                             checked={estado.modoDebug}
-                            onChange={event=>dispatch({type:'MODO_DEBUG', value:!!event.currentTarget.checked})}
+                            onChange={event=>dispatch({type:'MODO_DEBUG', valor:!!event.currentTarget.checked})}
                             value="checkedB"
                             color="secondary"
                         />
