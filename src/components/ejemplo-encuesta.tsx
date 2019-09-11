@@ -136,13 +136,23 @@ const acciones = {
     ),
 }
 
-const despacho:typeof acciones = 
-    likeAr(acciones).map(function(_v,name:string){
-        return (params:any)=>({type:name, params});
-    }).plain();
+type DevuelveLoMismoQueRecibe<T> = {
+    [K in keyof T]: T[K] extends (param:infer U) => any ? (param:U) => U & {type:K} : never
+}
 
+type LoQueRecibe<T> = {
+    [K in keyof T]: T[K] extends (param:infer U) => any ? U & {type:K} : never
+}
 
-function reduxEncuestas(estadoAnterior:EstadoEncuestas = estadoInicial, accion:any){
+// @ts-ignore
+const despacho:DevuelveLoMismoQueRecibe<typeof acciones> = 
+likeAr(acciones).map(function(_v,name:string){
+    return (params:any)=>({type:name, params});
+}).plain();
+
+type Acciones = {type:keyof typeof acciones, params:any};
+
+function reduxEncuestas(estadoAnterior:EstadoEncuestas = estadoInicial, accion:Acciones){
     if(accion.type in acciones){
         return acciones[accion.type](accion.params)(estadoAnterior);
     }
