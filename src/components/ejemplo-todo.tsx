@@ -35,7 +35,7 @@ type TodoActionAdd = {type:'ADD_TODO', payload:{id:string, content:string}};
 type TodoActionToggle = {type:'TOGGLE_TODO', payload:{id:string}};
 type TodoAction = TodoActionAdd | TodoActionToggle;
 
-function todoReducer(state:TodoState = initialState, action:TodoAction) {
+function todoReducer(state:TodoState, action:TodoAction) {
     switch (action.type) {
         case ADD_TODO: {
         const { id, content } = action.payload;
@@ -70,7 +70,23 @@ function todoReducer(state:TodoState = initialState, action:TodoAction) {
     }
 }
 
-const store = createStore(todoReducer); 
+function loadState():TodoState{
+    var content = localStorage.getItem('ejemplo-todo');
+    if(content){
+        return JSON.parse(content);
+    }else{
+        return initialState;
+    }
+}
+
+function saveState(state:TodoState){
+    localStorage.setItem('ejemplo-todo', JSON.stringify(state));
+}
+
+const store = createStore(todoReducer, loadState()); 
+store.subscribe(function(){
+    saveState(store.getState());
+});
 
 /////////////// VISTA:
 function TodoTaskRow(props:{id:string}){
