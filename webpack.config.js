@@ -38,6 +38,7 @@ module.exports = {
         "react": "React",
         "react-dom": "ReactDOM",
         "@material-ui/core": "MaterialUI",
-        "react-redux": "ReactRedux"
+        "react-redux": "ReactRedux",
+        "redux-thunk": "ReduxThunk"
     }
 };

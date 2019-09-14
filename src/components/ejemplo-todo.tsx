@@ -1,9 +1,11 @@
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createStore } from "redux";
 import { Provider, useSelector, useDispatch } from "react-redux"; 
 import { Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button } from "@material-ui/core";
 import { deepFreeze } from "best-globals";
+import { ProgressLine } from "./progress";
+import {  fetchAndDispatch } from "./marcos";
 
 ///////// ESTADO:
 type TodoTask={
@@ -14,6 +16,13 @@ type TodoTask={
 type TodoState={
     allIds:string[]
     byIds:{[id:string]:TodoTask},
+    repo:{
+        localTimeStamp: number|null,
+        serverTimeStamp: number|null,
+        saving: boolean|null,
+        loading: boolean|null,
+        lastError: Error|null,
+    }
 }
 
 const taskList4Example={
@@ -24,20 +33,35 @@ const taskList4Example={
 
 const initialState:TodoState = {
     allIds: Object.keys(taskList4Example),
-    byIds:  taskList4Example
+    byIds:  taskList4Example,
+    repo:{
+        localTimeStamp: null,
+        serverTimeStamp: null,
+        loading: null,
+        saving: false,
+        lastError: null
+    }
 };
 
 /////////// CONTROLADOR
-const ADD_TODO='ADD_TODO';
+const ADD_TODO   ='ADD_TODO';
 const TOGGLE_TODO='TOGGLE_TODO';
+const FETCHED    ='FETCHED';
+const SAVED      ='SAVED';
+const TX_ERROR   ='TX_ERROR';
+const LOADING    ='LOADING';
 
 type TodoActionAdd = {type:'ADD_TODO', payload:{id:string, content:string}};
 type TodoActionToggle = {type:'TOGGLE_TODO', payload:{id:string}};
-type TodoAction = TodoActionAdd | TodoActionToggle;
+type TodoActionSaved = {type:'SAVED', payload:{timestamp:number}};
+type TodoActionFetched = {type:'FETCHED', payload:{content:TodoState, timestamp:number}};
+type TodoActionTxError = {type:'TX_ERROR', payload:Error};
+type TodoActionLoading = {type:'LOADING'};
+type TodoAction = TodoActionAdd | TodoActionToggle | TodoActionSaved | TodoActionFetched | TodoActionTxError | TodoActionLoading;
 
-function todoReducer(state:TodoState, action:TodoAction) {
+function todoReducer(state:TodoState = initialState, action:TodoAction):TodoState {
     switch (action.type) {
-        case ADD_TODO: {
+    case ADD_TODO: {
         const { id, content } = action.payload;
         return deepFreeze({
             ...state,
@@ -65,6 +89,48 @@ function todoReducer(state:TodoState, action:TodoAction) {
             }
         });
     }
+    case FETCHED: {
+        return deepFreeze({
+            ...action.payload.content,
+            repo:{
+                localTimeStamp:action.payload.timestamp,
+                serverTimeStamp:action.payload.timestamp,
+                lastError:null,
+                loading:false
+            }
+        });
+    }
+    case SAVED: {
+        return deepFreeze({
+            ...state,
+            repo:{
+                localTimeStamp:action.payload.timestamp,
+                serverTimeStamp:action.payload.timestamp,
+                lastError:null,
+                saving:false
+            }
+        });
+    }
+    case TX_ERROR: {
+        return deepFreeze({
+            ...state,
+            repo:{
+                ...state.repo,
+                lastError:action.payload,
+                saving:false,
+                loading:false
+            }
+        });
+    }
+    case LOADING: {
+        return deepFreeze({
+            ...state,
+            repo:{
+                ...state.repo,
+                loading:true
+            }
+        });
+    }
     default:
         return deepFreeze(state);
     }
@@ -73,7 +139,16 @@ function todoReducer(state:TodoState, action:TodoAction) {
 function loadState():TodoState{
     var content = localStorage.getItem('ejemplo-todo');
     if(content){
-        return JSON.parse(content);
+        var state:TodoState = JSON.parse(content);
+        return {
+            ...state,
+            repo:{
+                ...state.repo,
+                loading: null,
+                saving: false,
+                lastError: null
+            }
+        };
     }else{
         return initialState;
     }
@@ -159,13 +234,33 @@ function TodoAddRow(){
 }
 
 function TodoViewer(){
-    const ids = useSelector((todos:TodoState)=>todos.allIds);
-    return <table className="ejemplo-todo">
-        {ids.map(id=>
-            <TodoTaskRow key={id} id={id}/>
-        )}
-        <TodoAddRow/>
-    </table>
+    const {allIds, repo:{loading,saving,lastError}} = useSelector((todos:TodoState)=>todos);
+    const dispatch = useDispatch();
+    useEffect(()=>{
+        if(loading==null){
+            fetchAndDispatch('file-read?file=ejemplo-todo.json', dispatch, 'LOADING', 'FETCHED');
+        }
+    },[loading])
+    return <>
+        {lastError!=null?(
+            lastError.code==404?
+                <div>Nuevo</div>
+            :<> 
+                <div style={{color:'red'}}>{lastError.message}</div>
+                { lastError.details?<div style={{color:'red'}}>{lastError.details}</div>:null }
+            </>
+        ):null}
+        {loading?<ProgressLine/>:null}
+        {saving?<ProgressLine color="secondary" />:null}
+        <table className="ejemplo-todo">
+            <tbody>
+                {allIds.map(id=>
+                    <TodoTaskRow key={id} id={id}/>
+                )}
+            </tbody>
+            <TodoAddRow/>
+        </table>
+    </>
 }
 
 export function EjemploTodo(){

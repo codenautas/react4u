@@ -1,2 +1,5 @@
 server4test:
   port: 8088
+  local-file-repo:
+    enabled: true
+    delay: 2000

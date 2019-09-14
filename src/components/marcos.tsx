@@ -5,6 +5,59 @@ import { makeStyles, SvgIcon, Typography } from "@material-ui/core";
 import { Drawer, List, ListItem, ListItemText, ListItemIcon } from "@material-ui/core";
 
 import * as likeAr from "like-ar";
+import { response } from "express";
+
+export function useFetch<T>(url:string, defaultData:T) {
+    const [data, updateData] = useState(defaultData)
+    const [err , updateErr ] = useState<Error|null>(null)
+    useEffect(()=>{
+        const ajaxRequest = async () => {
+            try{
+                const resp = await fetch(url)
+                const json = await resp.json()
+                updateData(json)
+            }catch(err){
+                updateErr(err);
+            }
+        }
+        ajaxRequest();
+    }, [url])
+    return [data,err];
+}
+
+export type FetcherFun = (action:{type:string, payload?:any})=>void
+
+export function fetchAndDispatch(url:string, dispatchDataOrError:FetcherFun, typeDoing:'FECTHING', typeOk:'FETCHED'):void;
+export function fetchAndDispatch(url:string, dispatchDataOrError:FetcherFun, typeDoing:'SAVING', typeOk:'SAVED', content:string):void;
+export function fetchAndDispatch(url:string, dispatchDataOrError:FetcherFun, typeDoing:string, typeOk:string, content?:string):void
+export function fetchAndDispatch(url:string, dispatchDataOrError:FetcherFun, typeDoing:string, typeOk:string, content?:string
+) {
+    dispatchDataOrError({type:typeDoing})
+    const ajaxRequest = async () => {
+        var resp: Response|null = null;
+        try{
+            resp = await fetch(url)
+            if(resp.status==200){
+                const json = await resp.json()
+                // TODO: generalizar y pasar el timestamp a otro lado
+                var content = {...json, content:JSON.parse(json.content)}
+                dispatchDataOrError({type:typeOk, payload:content})
+            }else{
+                dispatchDataOrError({type:'TX_ERROR', payload:{code:resp.status, message:resp.status+' '+resp.statusText, details:url}})
+            }
+        }catch(err){
+            try{
+                var details=resp && (resp.statusText || (await resp.text()).substr(0,10));
+                console.log(details);
+                err.details=details;
+            }finally{
+                console.log(err);
+                dispatchDataOrError({type:'TX_ERROR', payload:err});
+            }
+        }
+    }
+    ajaxRequest();
+}
 
 const MENUTYPE:'simple'|'draw'='draw';
 
