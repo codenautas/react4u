@@ -12,9 +12,11 @@ type Focusable = {
     focus:()=>void
     blur:()=>void
 }
+type AtributoDataTypes = 'numero'|'texto';
 
 type DataAtributo = {
     atributo:string,
+    tipodato: AtributoDataTypes,
     valorAnterior:string|null,
     valor:string|null
 }
@@ -60,8 +62,8 @@ var dataPreciosInicialCorto:DataPrecio[] = [
         tipoPrecio:'O',
         precio:130,
         atributos:[
-            {atributo:'Marca', valorAnterior:'La campagnola', valor:null},
-            {atributo:'Gramaje', valorAnterior:'300', valor:null}
+            {atributo:'Marca', valorAnterior:'La campagnola', tipodato:"texto", valor:null},
+            {atributo:'Gramaje', valorAnterior:'300', tipodato:"numero", valor:null}
         ],
         cambio: null
     },
@@ -73,8 +75,8 @@ var dataPreciosInicialCorto:DataPrecio[] = [
         tipoPrecio:null,
         precio:null,
         atributos:[
-            {atributo:'Marca', valorAnterior:'La campagnola', valor:null},
-            {atributo:'Gramaje', valorAnterior:'300', valor:null}
+            {atributo:'Marca', valorAnterior:'La campagnola', tipodato:"texto", valor:null},
+            {atributo:'Gramaje', valorAnterior:'300', tipodato:"numero", valor:null}
         ],
         cambio: null
     },
@@ -86,9 +88,9 @@ var dataPreciosInicialCorto:DataPrecio[] = [
         tipoPrecio:'S',
         precio:null,
         atributos:[
-            {atributo:'Marca', valorAnterior:'Unión', valor:null},
-            {atributo:'Variante', valorAnterior:'Suave sin palo', valor:null},
-            {atributo:'Gramaje', valorAnterior:'500', valor:null}
+            {atributo:'Marca', valorAnterior:'Unión', tipodato:"texto", valor:null},
+            {atributo:'Variante', valorAnterior:'Suave sin palo', tipodato:"texto", valor:null},
+            {atributo:'Gramaje', valorAnterior:'500', tipodato:"numero", valor:null}
         ],
         cambio: null
     },
@@ -100,9 +102,9 @@ var dataPreciosInicialCorto:DataPrecio[] = [
         tipoPrecio:null,
         precio:null,
         atributos:[
-            {atributo:'Marca'  , valorAnterior:'Ledesma', valor:null},
-            {atributo:'Envase' , valorAnterior:'papel'  , valor:null},
-            {atributo:'Gramaje', valorAnterior:'1000'   , valor:null}
+            {atributo:'Marca'  , valorAnterior:'Ledesma', tipodato:"texto", valor:null},
+            {atributo:'Envase' , valorAnterior:'papel', tipodato:"texto", valor:null},
+            {atributo:'Gramaje', valorAnterior:'1000', tipodato:"numero", valor:null}
         ],
         cambio: null
     },
@@ -114,7 +116,7 @@ var dataPreciosInicialCorto:DataPrecio[] = [
         tipoPrecio:'P',
         precio:57.75,
         atributos:[
-            {atributo:'Marca', valorAnterior:'Sancor', valor:'Sancor'},
+            {atributo:'Marca', valorAnterior:'Sancor', tipodato:"texto", valor:'Sancor'},
         ],
         cambio: null
     },
@@ -126,10 +128,10 @@ var dataPreciosInicialCorto:DataPrecio[] = [
         tipoPrecio:'P',
         precio:57.75,
         atributos:[
-            {atributo:'Marca'   , valorAnterior:'Sancor', valor:null},
-            {atributo:'Variante', valorAnterior:'Repostero', valor:null},
-            {atributo:'Gramaje' , valorAnterior:'500g', valor:null},
-            {atributo:'Envase'  , valorAnterior:'Plástico', valor:null},
+            {atributo:'Marca'   , valorAnterior:'Sancor', tipodato:"texto", valor:null},
+            {atributo:'Variante', valorAnterior:'Repostero', tipodato:"texto", valor:null},
+            {atributo:'Gramaje' , valorAnterior:'500', tipodato:"numero", valor:null},
+            {atributo:'Envase'  , valorAnterior:'Plástico', tipodato:"texto", valor:null},
         ],
         cambio: null
     },
@@ -154,9 +156,9 @@ var dataPreciosInicial=[...dataPreciosInicialCorto,
         tipoPrecio:null,
         precio:null,
         atributos:[
-            {atributo:'Marca'   , valorAnterior:'s/m'   , valor:null},
-            {atributo:'Kilos'   , valorAnterior:'3'     , valor:null},
-            {atributo:'Envase'  , valorAnterior:'Papel' , valor:null},
+            {atributo:'Marca'   , valorAnterior:'s/m', tipodato:"texto", valor:null},
+            {atributo:'Kilos'   , valorAnterior:'3', tipodato:"numero", valor:null},
+            {atributo:'Envase'  , valorAnterior:'Papel', tipodato:"texto", valor:null},
         ],
         cambio: null
     },
@@ -170,8 +172,19 @@ deepFreeze(dataPreciosInicial);
 
 type OnUpdate<T> = (data:T)=>void
 
+type InputTypes = 'date'|'number'|'tel'|'text';
+
+function adaptAtributoDataTypes(attrDataType:AtributoDataTypes):InputTypes{
+    const adapter:{[key in AtributoDataTypes]:InputTypes} = {
+        'numero': 'number',
+        'texto': 'text'
+    }
+    return adapter[attrDataType]
+}
+
 function TypedInput<T>(props:{
-    value:T, 
+    value:T,
+    dataType: InputTypes
     onUpdate:OnUpdate<T>, 
     onFocusOut:()=>void, 
     onWantToMoveForward?:(()=>boolean)|null
@@ -186,7 +199,7 @@ function TypedInput<T>(props:{
     // @ts-ignore acá hay un problema con el cambio de tipos
     var valueString:string = value==null?'':value;
     return (
-        <input ref={inputRef} value={valueString} onChange={(event)=>{
+        <input ref={inputRef} value={valueString} type={props.dataType} onChange={(event)=>{
             // @ts-ignore Tengo que averiguar cómo hacer esto genérico:
             setValue(event.target.value);
         }} onBlur={(event)=>{
@@ -215,6 +228,7 @@ function TypedInput<T>(props:{
 
 const EditableTd = forwardRef(function<T extends any>(props:{
     disabled?:boolean,
+    dataType: InputTypes,
     value:T, 
     className?:string, colSpan?:number, rowSpan?:number, 
     onUpdate:OnUpdate<T>, 
@@ -236,7 +250,7 @@ const EditableTd = forwardRef(function<T extends any>(props:{
             ()=>setEditando(true && !props.disabled)
         }>
             {editando?
-                <TypedInput value={props.value} onUpdate={value =>{
+                <TypedInput value={props.value} dataType={props.dataType} onUpdate={value =>{
                     props.onUpdate(value);
                 }} onFocusOut={()=>{
                     setEditando(false);
@@ -271,7 +285,7 @@ const AtributosRow = forwardRef(function(props:{
                     }
                 }}>{props.habilitarCopiado?FLECHAATRIBUTOS:props.cambio}</td>
                 :null}
-            <EditableTd disabled={props.deshabilitarAtributo} colSpan={2} className="atributo-actual" value={atributo.valor} onUpdate={value=>{
+            <EditableTd disabled={props.deshabilitarAtributo} colSpan={2} className="atributo-actual" dataType={adaptAtributoDataTypes(atributo.tipodato)} value={atributo.valor} onUpdate={value=>{
                 props.onUpdate(props.dataAtributo.atributo, value)
             }} onWantToMoveForward={props.onWantToMoveForward}
             ref={ref} />
@@ -376,7 +390,7 @@ function PreciosRow(props:{
                         </Button>
                     </DialogActions>
                 </Dialog>
-                <EditableTd disabled={deshabilitarPrecio} className="precio" value={props.dataPrecio.precio} onUpdate={value=>{
+                <EditableTd disabled={deshabilitarPrecio} className="precio" value={props.dataPrecio.precio} dataType="number" onUpdate={value=>{
                     props.setPrecio(value);
                     if(!props.dataPrecio.tipoPrecio && props.dataPrecio.precio){
                         props.setTipoPrecioPositivo(tipoPrecioPredeterminado.tipoPrecio);
