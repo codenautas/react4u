@@ -2,10 +2,10 @@ import * as React from "react";
 import { useState, useEffect } from "react";
 import { createStore } from "redux";
 import { Provider, useSelector, useDispatch } from "react-redux"; 
-import { Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button } from "@material-ui/core";
+import { Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button, SvgIcon } from "@material-ui/core";
 import { deepFreeze } from "best-globals";
 import { ProgressLine } from "./progress";
-import {  fetchAndDispatch } from "./marcos";
+import { fetchAndDispatch, materialIoIconsSvgPath } from "./marcos";
 
 ///////// ESTADO:
 type TodoTask={
@@ -50,6 +50,7 @@ const FETCHED    ='FETCHED';
 const SAVED      ='SAVED';
 const TX_ERROR   ='TX_ERROR';
 const LOADING    ='LOADING';
+const SAVING     ='SAVING';
 
 type TodoActionAdd = {type:'ADD_TODO', payload:{id:string, content:string}};
 type TodoActionToggle = {type:'TOGGLE_TODO', payload:{id:string}};
@@ -57,7 +58,8 @@ type TodoActionSaved = {type:'SAVED', payload:{timestamp:number}};
 type TodoActionFetched = {type:'FETCHED', payload:{content:TodoState, timestamp:number}};
 type TodoActionTxError = {type:'TX_ERROR', payload:Error};
 type TodoActionLoading = {type:'LOADING'};
-type TodoAction = TodoActionAdd | TodoActionToggle | TodoActionSaved | TodoActionFetched | TodoActionTxError | TodoActionLoading;
+type TodoActionSaving = {type:'SAVING'};
+type TodoAction = TodoActionAdd | TodoActionToggle | TodoActionSaved | TodoActionFetched | TodoActionTxError | TodoActionLoading | TodoActionSaving;
 
 function todoReducer(state:TodoState = initialState, action:TodoAction):TodoState {
     switch (action.type) {
@@ -72,6 +74,10 @@ function todoReducer(state:TodoState = initialState, action:TodoAction):TodoStat
                     content,
                     completed: false
                 }
+            },
+            repo:{
+                ...state.repo,
+                localTimeStamp: new Date().getTime()
             }
         });
     }
@@ -86,6 +92,10 @@ function todoReducer(state:TodoState = initialState, action:TodoAction):TodoStat
                     ...selTask,
                     completed: !selTask.completed
                 }
+            },
+            repo:{
+                ...state.repo,
+                localTimeStamp: new Date().getTime()
             }
         });
     }
@@ -131,6 +141,15 @@ function todoReducer(state:TodoState = initialState, action:TodoAction):TodoStat
             }
         });
     }
+    case SAVING: {
+        return deepFreeze({
+            ...state,
+            repo:{
+                ...state.repo,
+                saving:true
+            }
+        });
+    }
     default:
         return deepFreeze(state);
     }
@@ -169,11 +188,15 @@ function TodoTaskRow(props:{id:string}){
     const dispatch = useDispatch();
     return <>
         <tr className={task.completed?"completed":"pending"}>
-            <td>{props.id}</td>
-            <td>{task.content}</td>
-            <td onClick={_=>
+            <td className="todo-id">{props.id}</td>
+            <td className="todo-content">{task.content}</td>
+            <td className="todo-checkbox" onClick={_=>
                 dispatch({type:'TOGGLE_TODO', payload:{id:props.id}})
-            }>{task.completed?"✔":"✘"}</td>
+            }>{task.completed?
+                <SvgIcon><path d={materialIoIconsSvgPath.CheckBoxOutlined}/></SvgIcon>
+            :
+                <SvgIcon><path d={materialIoIconsSvgPath.CheckBoxOutlineBlankOutlined}/></SvgIcon>
+            }</td>
         </tr>
     </>;
 }
@@ -188,7 +211,11 @@ function TodoAddRow(){
             <th></th>
             <td onClick={_=>
                 setDialog({id:'T'+Math.random().toString().slice(14)})
-            }>+</td>
+            }>
+                <SvgIcon>
+                    <path d={materialIoIconsSvgPath.Add}/>
+                </SvgIcon>
+            </td>
         </tr>
         <Dialog open={!!dialog} onClose={handleClose}>
             <DialogTitle id="form-dialog-title">Subscribe</DialogTitle>
@@ -234,7 +261,10 @@ function TodoAddRow(){
 }
 
 function TodoViewer(){
-    const {allIds, repo:{loading,saving,lastError}} = useSelector((todos:TodoState)=>todos);
+    const {repo, ...state} = useSelector((todos:TodoState)=>todos);
+    const {allIds} = state;
+    const {loading,saving,lastError,localTimeStamp,serverTimeStamp} = repo;
+    const saved = localTimeStamp==null || serverTimeStamp!=null && localTimeStamp<=serverTimeStamp;
     const dispatch = useDispatch();
     useEffect(()=>{
         if(loading==null){
@@ -254,6 +284,20 @@ function TodoViewer(){
         {saving?<ProgressLine color="secondary" />:null}
         <table className="ejemplo-todo">
             <tbody>
+                <tr>
+                    <td className="todo-title" colSpan={2}>TO DO</td>
+                    <td className="todo-save" >
+                        <SvgIcon className={saved?'todo-saved':'todo-dirty'}
+                            onClick={_=>{
+                                if(!saving){
+                                    fetchAndDispatch('file-write?file=ejemplo-todo.json', dispatch, 'SAVING', 'SAVED',JSON.stringify(state));
+                                }
+                            }}
+                        >
+                            <path d={materialIoIconsSvgPath.Save}/>
+                        </SvgIcon>
+                    </td>
+                </tr>
                 {allIds.map(id=>
                     <TodoTaskRow key={id} id={id}/>
                 )}

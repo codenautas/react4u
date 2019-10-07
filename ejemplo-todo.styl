@@ -9,6 +9,24 @@
       margin 4px
       padding-left 5px
       padding-right 5px
+      svg
+        vertical-align bottom
+      &.todo-save
+        background-color #bbdefb
+        .todo-saved
+          color #81c784
+        .todo-dirty
+          color #f44336
+      &.todo-title
+        background-color #bbdefb
+        font-weight bold
+        text-align center
+        font-size 110%
+        svg
+          vertical-align bottom
+      &.todo-checkbox
+        svg
+          vertical-align bottom
     tr.completed
       td
         background-color #BFD
@@ -17,6 +35,5 @@
         background-color #FDE
     tr.add-task
       td
-        background-color #8BF
-        font-size 150%
-        font-weight bold
+        border-radius 99px
+        background-color #1e88e5
