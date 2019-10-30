@@ -239,7 +239,7 @@ const EditableTd = forwardRef(function<T extends any>(props:{
     const [editando, setEditando] = useState(false);
     useImperativeHandle(ref, () => ({
         focus: () => {
-            setEditando(true && !props.disabled)
+            setEditando(true)
         },
         blur: () => {
             setEditando(false)
