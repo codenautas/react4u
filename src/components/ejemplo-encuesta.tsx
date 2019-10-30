@@ -10,15 +10,19 @@ import { deepFreeze } from "best-globals"
 
 type TipoDato='string'|'number';
 
+type OpcionId = number;
+
 type Opciones = {
-    opcion: number,
+    opcion: OpcionId,
     texto: string,
     aclaracion?: string,
     salto?: string
 };
 
+type PreguntaId = string;
+
 type Pregunta = {
-    id:string,
+    id:PreguntaId,
     texto:string,
     aclaracion?:string,
     tipoPregunta?:string,
@@ -98,6 +102,9 @@ estructura.forEach(function(pregunta,i){
 })
 
 const indexPregunta = likeAr.createIndex(estructura,'id');
+const indexPreguntaOpcion = likeAr(indexPregunta).map(p=>'opciones' in p?likeAr.createIndex(p.opciones, 'opcion'):null)
+
+    = { P1: {1: 'Sí ', 2: 'No'}}
 
 /////// DATOS
 
@@ -163,12 +170,20 @@ const store = createStore(reduxEncuestas)
 
 ////////// VISTA
 
-function RowOpciones(props:{opcion:Opciones, elegida:boolean, onSelect:()=>void}){
+function RowOpciones(props:{key:OpcionId, elegida:boolean, pregunta:PreguntaId}){
+    const opcion = useSelector(
+        (estado:EstadoEncuestas)=>({
+            opcion:indexPregunta[props.pregunta].opciones //estado.respuestas[props.pregunta]].opciones[props.key]
+        })
+    )
+    const dispatch = useDispatch();
     return (
-        <tr className='opciones' es-elegida={props.elegida?"si":"no"} onClick={props.onSelect}>
-            <td>{props.opcion.opcion}</td>
-            <td className='texto-opcion'>{props.opcion.texto}</td>
-            <td>{props.opcion.salto}</td>
+        <tr className='opciones' es-elegida={props.elegida?"si":"no"} onClick={
+            ()=>dispatch(despacho.registrarRespuesta({pregunta:props.pregunta, respuesta:props.opcion}))
+        }>
+            <td>{opcion.opcion}</td>
+            <td className='texto-opcion'>{opcion.texto}</td>
+            <td>{opcion.salto}</td>
         </tr>
     )
 }
@@ -202,12 +217,7 @@ function RowPregunta(props:{key:string, preguntaId:string}){
                 :null}
                 {'opciones' in pregunta?
                     <table><tbody>{pregunta.opciones.map(opcion=>
-                        <RowOpciones key={opcion.opcion} opcion={opcion} elegida={opcion.opcion==estadoPregunta.respuesta}
-                            onSelect={()=>{/*
-                                setNumRespuesta(opcion.opcion);
-                                props.onUpdate(Number(opcion.opcion));
-                            */}}
-                        />
+                        <RowOpciones key={opcion.opcion} pregunta={pregunta.id} opcion={opcion} elegida={opcion.opcion==estadoPregunta.respuesta}/>
                     )}</tbody></table>
                 :<TextField
                     id="standard-number"
