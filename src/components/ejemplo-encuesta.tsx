@@ -8,7 +8,7 @@ import { deepFreeze } from "best-globals"
 
 /////// ESTRUCTURA
 
-type TipoDato='string'|'number';
+type TipoDato='string'|'number'|'opcion';
 
 type OpcionId = number;
 
@@ -21,6 +21,22 @@ type Opciones = {
 
 type PreguntaId = string;
 
+type PreguntaBasica = {
+    id:PreguntaId,
+    texto:string,
+    aclaracion?:string,
+    tipoPregunta?:string,
+    salto?:string,
+    posicion?:number,
+    tipoDato:TipoDato
+}
+
+type PreguntaConOpciones = PreguntaBasica & { tipoDato:'opcion', opciones: Opciones[] }
+type PreguntaAbiertaNumerica = PreguntaBasica & { tipoDato:'number', maxValor?:number, minValor?:number }
+type PreguntaAbiertaTexto = PreguntaBasica & { tipoDato:'string', regexp?:RegExp }
+type Pregunta = PreguntaConOpciones | PreguntaAbiertaNumerica | PreguntaAbiertaTexto;
+
+/*
 type Pregunta = {
     id:PreguntaId,
     texto:string,
@@ -28,16 +44,14 @@ type Pregunta = {
     tipoPregunta?:string,
     salto?:string,
     posicion?:number
-}&({
-    opciones: Opciones[]
-}|{
-    tipoDato:TipoDato
-});
+}&({ opciones: Opciones[] }|{ tipoDato:TipoDato })
+*/
 
 var estructura:Pregunta[]=[{
     id:'T1',
     texto:'La semana pasada ¿Trabajó al menos una hora?',
     tipoPregunta:'E-S',
+    tipoDato:'opcion',
     opciones: [{
         opcion: 1, 
         texto: 'Sí',
@@ -49,6 +63,7 @@ var estructura:Pregunta[]=[{
 },{
     id:'T2',
     texto:'En esa semana, ¿hizo alguna changa, fabricó en su casa algo para vender, ayudó a un familiar o amigo en su negocio?',
+    tipoDato:'opcion',
     opciones: [{
         opcion: 1, 
         texto: 'Sí',
@@ -62,6 +77,7 @@ var estructura:Pregunta[]=[{
     texto:'¿La semana pasada...',
     tipoPregunta:'G-S',
     aclaracion: 'Primero lea todas las opciones y luego marque la respuesta',
+    tipoDato:'opcion',
     opciones: [{
         opcion: 1, 
         texto: 'no deseaba, no quería trabajar?',
@@ -102,9 +118,7 @@ estructura.forEach(function(pregunta,i){
 })
 
 const indexPregunta = likeAr.createIndex(estructura,'id');
-const indexPreguntaOpcion = likeAr(indexPregunta).map(p=>'opciones' in p?likeAr.createIndex(p.opciones, 'opcion'):null)
-
-    = { P1: {1: 'Sí ', 2: 'No'}}
+const indexPreguntaOpcion = likeAr(indexPregunta).map(p=>'opciones' in p?likeAr.createIndex(p.opciones, 'opcion'):null).plain();
 
 /////// DATOS
 
@@ -170,15 +184,23 @@ const store = createStore(reduxEncuestas)
 
 ////////// VISTA
 
-function RowOpciones(props:{key:OpcionId, elegida:boolean, pregunta:PreguntaId}){
-    const opcion = useSelector(
-        (estado:EstadoEncuestas)=>({
-            opcion:indexPregunta[props.pregunta].opciones //estado.respuestas[props.pregunta]].opciones[props.key]
-        })
+function RowOpciones(props:{opcion:OpcionId, pregunta:PreguntaId}){
+    const {opcion, elegida} = useSelector(
+        (estado:EstadoEncuestas)=>{
+            var laPregunta=indexPregunta[props.pregunta];
+            if(laPregunta.tipoDato=='opcion'){
+                return {
+                    opcion:indexPreguntaOpcion[props.pregunta]![props.opcion]!,
+                    elegida:props.opcion == estado.respuestas[props.pregunta]
+                }
+            }else{
+                throw new Error('error interno desplegando opciones de una pregunta que no tiene opciones')
+            }
+        }
     )
     const dispatch = useDispatch();
     return (
-        <tr className='opciones' es-elegida={props.elegida?"si":"no"} onClick={
+        <tr className='opciones' es-elegida={elegida?"si":"no"} onClick={
             ()=>dispatch(despacho.registrarRespuesta({pregunta:props.pregunta, respuesta:props.opcion}))
         }>
             <td>{opcion.opcion}</td>
@@ -192,10 +214,12 @@ function RowPregunta(props:{key:string, preguntaId:string}){
     const estadoPregunta = useSelector((estado:EstadoEncuestas) => 
         ({modoIngresador:estado.modoIngresador, respuesta:estado.respuestas[props.preguntaId] }
     ));
+    const dispatch = useDispatch();
     const pregunta = indexPregunta[props.preguntaId];
     const changeNumRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
         const valor = Number(event.currentTarget.value);
         /// TODO: cambiar
+        dispatch(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
     };
     const changeTextRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
         const valor = event.currentTarget.value;
@@ -204,7 +228,7 @@ function RowPregunta(props:{key:string, preguntaId:string}){
     return (
         <tr tipo-pregunta={pregunta.tipoPregunta}>
             <td className="pregunta-id"><div>{pregunta.id}</div>
-                {'opciones' in pregunta?
+                {pregunta.tipoDato=='opcion'?
                     (estadoPregunta.modoIngresador?<input className="opcion-data-entry" value={estadoPregunta.respuesta||''}
                         onChange={changeNumRespuesta}
                     />:null)
@@ -217,7 +241,7 @@ function RowPregunta(props:{key:string, preguntaId:string}){
                 :null}
                 {'opciones' in pregunta?
                     <table><tbody>{pregunta.opciones.map(opcion=>
-                        <RowOpciones key={opcion.opcion} pregunta={pregunta.id} opcion={opcion} elegida={opcion.opcion==estadoPregunta.respuesta}/>
+                        <RowOpciones key={opcion.opcion} opcion={opcion.opcion} pregunta={pregunta.id} />
                     )}</tbody></table>
                 :<TextField
                     id="standard-number"
