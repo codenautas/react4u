@@ -2,7 +2,7 @@ import * as React from "react";
 import {useState} from "react";
 import { createStore } from "redux"
 import { Provider, useSelector, useDispatch } from "react-redux"
-import { TextField, Switch, FormControlLabel } from "@material-ui/core"
+import { Button, TextField, Switch, FormControlLabel } from "@material-ui/core"
 import * as likeAr from "like-ar";
 import { deepFreeze } from "best-globals"
 
@@ -16,7 +16,7 @@ type Opciones = {
     opcion: OpcionId,
     texto: string,
     aclaracion?: string,
-    salto?: string
+    salto?: string|null
 };
 
 type PreguntaId = string;
@@ -47,7 +47,7 @@ type Pregunta = {
 }&({ opciones: Opciones[] }|{ tipoDato:TipoDato })
 */
 
-var estructura:Pregunta[]=[{
+var estructuraMini:Pregunta[]=[{
     id:'T1',
     texto:'La semana pasada ¿Trabajó al menos una hora?',
     tipoPregunta:'E-S',
@@ -100,6 +100,41 @@ var estructura:Pregunta[]=[{
         texto: 'tenía un trabajo/negocio al que no concurrió?',
     }]
 },{
+    id:'T7',
+    texto:'¿Recibe u obtiene algún pago por su trabajo, en dinero o en especie?',
+    tipoDato:'opcion',
+    opciones: [{
+        opcion: 1, 
+        texto: 'Sí',
+        // salto: 'T30'
+    },{
+        opcion: 2, 
+        texto: 'No'
+    }]
+},{
+    id:'T9',
+    texto:'Durante los últimos 30 días, ¿estuvo buscando trabajo de alguna manera?',
+    tipoDato:'opcion',
+    opciones: [{
+        opcion: 1, 
+        texto: 'Sí',
+        // salto: 'T30'
+    },{
+        opcion: 2, 
+        texto: 'No'
+    }]
+},{
+    id:'T13',
+    texto:'En los últimos 12 meses, ¿buscó trabajo?',
+    tipoDato:'opcion',
+    opciones: [{
+        opcion: 1, 
+        texto: 'Sí'
+    },{
+        opcion: 2, 
+        texto: 'No'
+    }]
+},{
     id:'T28',
     texto:'¿Cuántos empleos/ocupaciones tiene?',
     aclaracion:'En el caso de tener más de un empleo, verifique que no haya trabajado en ninguno durante la semana pasada',
@@ -112,6 +147,24 @@ var estructura:Pregunta[]=[{
     tipoPregunta:'E-A',
     tipoDato:'string'
 }];
+
+function transformado(prefijoId:string, prefijoTexto:string){
+    return (p:Pregunta)=>({
+        ...p, id:prefijoId+p.id, texto:prefijoTexto+' '+p.texto,
+        ...(p.tipoDato=='opcion'?{
+            opciones:p.opciones.map((o:Opciones)=>({
+                ...o, salto:o.salto?prefijoId+o.salto:null
+            }))
+        }:null)
+    })
+}
+
+var estructura:Pregunta[]=[
+    ...estructuraMini,
+    ...estructuraMini.map(transformado('A', 'nuevamente')),
+    ...estructuraMini.map(transformado('B', 'otra vez')),
+    ...estructuraMini.map(transformado('C', 'por último')),
+];
 
 estructura.forEach(function(pregunta,i){
     pregunta.posicion=i;
@@ -201,11 +254,25 @@ function RowOpciones(props:{opcion:OpcionId, pregunta:PreguntaId}){
     const dispatch = useDispatch();
     return (
         <tr className='opciones' es-elegida={elegida?"si":"no"} onClick={
-            ()=>dispatch(despacho.registrarRespuesta({pregunta:props.pregunta, respuesta:props.opcion}))
+            ()=>{
+                dispatch(despacho.registrarRespuesta({pregunta:props.pregunta, respuesta:props.opcion}))
+                if(opcion.salto){
+                    var anchor = document.querySelector(`[pregunta-id=${opcion.salto}]`);
+                }else{
+                    var anchor = document.querySelector(`[pregunta-id=${props.pregunta}]`);
+                    if(anchor){
+                        anchor=anchor.nextSibling;
+                    }
+                }
+                setTimeout(()=>
+                    anchor && anchor.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+                    100
+                )
+            }
         }>
-            <td>{opcion.opcion}</td>
-            <td className='texto-opcion'>{opcion.texto}</td>
-            <td>{opcion.salto}</td>
+            <td><Button>{opcion.opcion}</Button></td>
+            <td className='texto-opcion'><Button>{opcion.texto}</Button></td>
+            <td><Button>{opcion.salto}</Button></td>
         </tr>
     )
 }
@@ -218,15 +285,14 @@ function RowPregunta(props:{key:string, preguntaId:string}){
     const pregunta = indexPregunta[props.preguntaId];
     const changeNumRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
         const valor = Number(event.currentTarget.value);
-        /// TODO: cambiar
         dispatch(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
     };
     const changeTextRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
         const valor = event.currentTarget.value;
-        /// TODO: cambiar
+        dispatch(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
     };
     return (
-        <tr tipo-pregunta={pregunta.tipoPregunta}>
+        <tr tipo-pregunta={pregunta.tipoPregunta} pregunta-id={pregunta.id}>
             <td className="pregunta-id"><div>{pregunta.id}</div>
                 {pregunta.tipoDato=='opcion'?
                     (estadoPregunta.modoIngresador?<input className="opcion-data-entry" value={estadoPregunta.respuesta||''}
