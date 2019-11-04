@@ -264,9 +264,12 @@ function RowOpciones(props:{opcion:OpcionId, pregunta:PreguntaId}){
                         anchor=anchor.nextSibling;
                     }
                 }
-                setTimeout(()=>
-                    anchor && anchor.scrollIntoView({ behavior: 'smooth', block: 'start' }),
-                    100
+                setTimeout(()=>{
+                    if(anchor){
+                        var rect = anchor.getBoundingClientRect();
+                        window.scrollTo({ behavior: 'smooth', top:rect.top+window.scrollY-100});
+                    }
+                }, 100
                 )
             }
         }>
@@ -329,7 +332,7 @@ function RowPregunta(props:{key:string, preguntaId:string}){
 function FormularioEncuesta(){
     const estado = useSelector((estado:EstadoEncuestas)=>estado);
     const dispatch = useDispatch();
-    return (
+    return (<>
         <table className="ejemplo-encuesta">
             <caption>Formulario Encuesta
                 <FormControlLabel
@@ -370,8 +373,8 @@ function FormularioEncuesta(){
                 </tr>
             </tfoot>
         </table>
-
-    )
+        <div style={{height:'200px'}}></div>
+    </>)
 }
 
 export function ProbarFormularioEncuesta(props:{}){
