@@ -273,11 +273,15 @@ function TodoViewer(){
     },[loading])
     return <>
         {lastError!=null?(
+            // @ts-ignore
             lastError.code==404?
                 <div>Nuevo</div>
             :<> 
                 <div style={{color:'red'}}>{lastError.message}</div>
-                { lastError.details?<div style={{color:'red'}}>{lastError.details}</div>:null }
+                { 
+                    // @ts-ignore
+                    lastError.details?<div style={{color:'red'}}>{lastError.details}</div>:null 
+                }
             </>
         ):null}
         {loading?<ProgressLine/>:null}

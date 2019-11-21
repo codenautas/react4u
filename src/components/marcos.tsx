@@ -111,10 +111,10 @@ export const materialIoIconsSvgPath:{[k:string]:string}={
 function splitVariables(line:string){
     return (
         likeAr(line.slice(line[0]=='?' || line[0]=='#'?1:0).split('&'))
-        .build<(string|boolean), string>((asignacion:string)=>{
+        .build<{[x:string]:string|boolean}>((asignacion:string)=>{
             const eqPosition = asignacion.indexOf('=');
             return eqPosition ? {[asignacion.substr(0,eqPosition)]:asignacion.substr(eqPosition+1)} : {[asignacion]: true}
-        })
+        }).plain()
     );
 }
 
@@ -123,7 +123,10 @@ export function Application(props:{children:Children[]}){
     const [drawOpened, setDrawOpened] = React.useState(false);
     const locationParts=splitVariables(location.hash);
     console.log(locationParts);
-    const [selectedPage, setSelectedPage] = useState<string>(locationParts.w||'main')
+    const [selectedPage, setSelectedPage] = useState<string>(
+        // @ts-ignore
+        locationParts.w ?? 'main'
+    )
     useEffect(()=>{
         if(selectedPage){
             location.hash='w='+selectedPage;

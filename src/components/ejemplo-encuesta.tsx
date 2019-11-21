@@ -261,7 +261,9 @@ function RowOpciones(props:{opcion:OpcionId, pregunta:PreguntaId}){
                 }else{
                     var anchor = document.querySelector(`[pregunta-id=${props.pregunta}]`);
                     if(anchor){
-                        anchor=anchor.nextSibling;
+                        if(anchor.nextSibling instanceof Element){
+                            anchor=anchor.nextSibling;
+                        }
                     }
                 }
                 setTimeout(()=>{

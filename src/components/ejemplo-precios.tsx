@@ -137,7 +137,7 @@ var dataPreciosInicialCorto:DataPrecio[] = [
     },
 ];
 
-var dataPreciosInicial=[...dataPreciosInicialCorto,
+var dataPreciosInicial:DataPrecio[]=[...dataPreciosInicialCorto,
     {
         producto:'Mandarina',
         especificacion:'Mandarina común',
@@ -509,13 +509,13 @@ export function PruebaRelevamientoPrecios(){
                 updateAtributo={(atributo:string, valor:string|null)=>{
                     var myDataPrecio = {
                         ...dataPrecio,
-                        atributos: dataPrecio.atributos.map(atrib=>
+                        atributos: dataPrecio.atributos.map((atrib:DataAtributo)=>
                             atrib.atributo == atributo?{...atrib, valor}:atrib
                         )
                     };
                     updateDataPrecio({
                         ...myDataPrecio,
-                        cambio: dataPrecio.atributos.find((atrib)=>
+                        cambio: dataPrecio.atributos.find((atrib:DataAtributo)=>
                             atrib.valorAnterior == atrib.valor
                         )!==null?'C':'='
                     },index);
