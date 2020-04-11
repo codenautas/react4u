@@ -1,0 +1,54 @@
+color_princial = #3f51b5
+
+tipo_codigo(colorFondo)
+  font-family Consolas, courier new, sans-serif
+  border-radius 5px
+  background-color colorFondo
+
+tipo_pre(colorFondo)
+  tipo_codigo(colorFondo)
+  padding 6px
+  margin 6px
+  color #EEE
+  white-space pre-wrap
+
+.doc-operaciones
+  font-family Roboto, Monserrat, Arial
+  .seccion
+    padding-top 12px
+    margin 12px
+    margin-top 36px
+  .titulo
+    color color_princial
+    font-size 18px
+    font-weight bold
+  .aclaracion
+    color gray
+  .comandos
+    tipo_pre(#333)
+  .equivale-titulo
+    font-size 16px
+    color #262
+    font-weight bold
+  .equivale
+    padding 6px
+  .equivale-cuerpo
+    margin-left 64px
+    margin-right 64px
+  .contenido
+    tipo_pre(#363, #575)
+  .codigo
+    display inline
+    padding 0px 2px 2px 2px
+    tipo_codigo(#333, #555)
+  .pie
+    height 100px
+    margin 0
+    margin-top 32px
+    background-color: #3f51b5
+  [doc-oscurecer="si"]
+    background-color #CCC
+    .comandos
+      background-color #555
+    .contenido
+      background-color #575
