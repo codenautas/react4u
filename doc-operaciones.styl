@@ -1,9 +1,10 @@
-color_princial = #3f51b5
+color_principal = #3f51b5
 
 tipo_codigo(colorFondo)
   font-family Consolas, courier new, sans-serif
   border-radius 5px
   background-color colorFondo
+  color #eee
 
 tipo_pre(colorFondo)
   tipo_codigo(colorFondo)
@@ -14,16 +15,29 @@ tipo_pre(colorFondo)
 
 .doc-operaciones
   font-family Roboto, Monserrat, Arial
+  .solo-para
+    border-top 2px solid color_principal
+    .etiqueta-colgante
+      vertical-align top
+      x-display inline-block
+      background-color color_principal
+      font-size 12px
+      font-weight bold
+      color #EEE
+      padding 2px 5px 3px 5px
+      margin-top 0px
+      border-radius 0 0 5px 5px
   .seccion
     padding-top 12px
     margin 12px
     margin-top 36px
   .titulo
-    color color_princial
+    color color_principal
     font-size 18px
     font-weight bold
   .aclaracion
     color gray
+    margin 6px
   .comandos
     tipo_pre(#333)
   .equivale-titulo
@@ -32,6 +46,7 @@ tipo_pre(colorFondo)
     font-weight bold
   .equivale
     padding 6px
+    margin 6px
   .equivale-cuerpo
     margin-left 64px
     margin-right 64px

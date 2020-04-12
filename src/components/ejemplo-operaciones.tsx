@@ -2,9 +2,13 @@ import * as React from "react";
 
 import {
     Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, 
+    Grid,
     MenuItem,
-    Select
+    Select, Switch
 } from '@material-ui/core';
+
+const DEPLOY_INICIAL=Symbol();
+const ACTUALIZACION=Symbol();
 
 const ModosVisualizacion = [
     {
@@ -15,19 +19,30 @@ const ModosVisualizacion = [
     },
     {
         nombre:'deploy inicial', 
+        codigo:DEPLOY_INICIAL,
         descripcion:`se instala una aplicación por primera vez`
     },
     {
         nombre:'actualización de versión', 
+        codigo:ACTUALIZACION,
         descripcion:`se actualiza la versión de una aplicación ya instalada`
     }
 ]
 
 function CrearDivConClase(attrs:{nombre:string}){
-    return function (props:{children:React.ReactNode}){
-        return <div className={attrs.nombre}>
-            {props.children}
-        </div>
+    return function (props:{children:React.ReactNode, states?:NuestrosStates, para?:Symbol[]}){    
+        const stateProps = ModosVisualizacion[props.states?.numModo?.[0]||0];
+        return stateProps.mostrarTodo || props.para==undefined || stateProps.codigo && props.para.includes(stateProps.codigo)?
+            <div className={attrs.nombre}>
+                {props.para && stateProps.mostrarTodo?
+                    <div className='solo-para'><span className='etiqueta-colgante'>
+                        solo para {props.para.length==1?`el modo`:`los modos`} de visualización:
+                        {props.para.map((s,i)=><span key={i}>{i?',':''} {ModosVisualizacion.find(d=>d.codigo==s)?.nombre} </span>)}
+                    </span></div>
+                :null}
+                {props.children}
+            </div>
+        :null;
     }
 }
 
@@ -53,7 +68,9 @@ const keywordStyles={
 
 // @ts-ignore Object.keys tiene que saber el tipo
 const keywords:(keyof typeof keywordStyles)[]=Object.keys(keywordStyles);
-const keywordsRegExp = new RegExp(`(\\b(?:\$\w+|(?:${keywords.join('|')}))\\b)`,'g')
+const keywordsRegExp = new RegExp(`((?:\\$\\w+|\\b(?:${keywords.join('|')}))\\b)`,'g')
+
+// "algo $algo che sudo che$algo+${pepe}asdf cargo".split(/((?:\$\w+|\b(?:_|$|sudo|nombre_instancia|nombre_instancia\w*))\b)/g)
 
 function Coso(props:{coso:string}){
     // @ts-ignore el tipo de kye está bien porque props.show in styles
@@ -106,16 +123,18 @@ function Codigo(props:{children:React.ReactNode}){
 }
 
 const handleChange = <T extends any>(stateSetter:React.Dispatch<React.SetStateAction<T>>) => 
-    (event: React.ChangeEvent<{ value: unknown }>) => {
-        stateSetter(event.target.value as T);
+    (event: React.ChangeEvent<{ checked?:unknown, value: unknown }>) => {
+        stateSetter(('checked' in event.target?event.target.checked:event.target.value) as T);
     }
 
-type useStateNumber = [number, React.Dispatch<React.SetStateAction<number>>];
+type useStateNumber  = [number , React.Dispatch<React.SetStateAction<number>> ];
+type useStateBoolean = [boolean, React.Dispatch<React.SetStateAction<boolean>>];
 
-type NuestrosStates = {numModo:useStateNumber}
+type NuestrosStates = {numModo:useStateNumber, privateRepo:useStateBoolean}
 
 function ModoVisualizacion(props:{states:NuestrosStates}){
     const [numModo, setNumModo] = props.states.numModo;
+    const [privateRepo, setPrivateRepo] = props.states.privateRepo;
     return <Seccion>
         <Titulo>
             Modo de visualización
@@ -129,6 +148,15 @@ function ModoVisualizacion(props:{states:NuestrosStates}){
             )
         }</Select>
         <Aclaracion>{ModosVisualizacion[numModo].descripcion}</Aclaracion>
+        <div>
+            <Grid component="label" container alignItems="center" spacing={1}>
+                <Grid item>público</Grid>
+                <Grid item>
+                    <Switch checked={privateRepo} onChange={handleChange(setPrivateRepo)} name="checkedC" />
+                </Grid>
+                <Grid item>privado</Grid>
+            </Grid>
+        </div>
     </Seccion>
 }
 
@@ -147,7 +175,7 @@ function Equivale(props:{states:NuestrosStates, children:React.ReactNode}){
 }
 
 export function CreacionDelArchivoDeConfiguracion(props:{states:NuestrosStates}){
-    return <Seccion>
+    return <Seccion states={props.states} para={[DEPLOY_INICIAL]}>
         <Titulo>Creación del archivo de configuración de la instancia</Titulo>
         <Comandos>
 ­            sudo ls -cal /opt/insts
@@ -190,6 +218,7 @@ export function CreacionDelArchivoDeConfiguracion(props:{states:NuestrosStates})
         </Aclaracion>
     </Seccion>
 }
+
 export function LecturaDelArchivoDeConfiguracion(props:{states:NuestrosStates}){
     return <Seccion>
         <Titulo>Lectura del archivo de configuración de la instancia</Titulo>
@@ -214,19 +243,83 @@ export function LecturaDelArchivoDeConfiguracion(props:{states:NuestrosStates}){
     </Seccion>
 }
 
+function GitUserAndPass(props:{states:NuestrosStates}){
+    return props.states.privateRepo[0]?<span title="el repositorio es privado, git pide usuario y clave cada vez." style={{color:"lightgreen"}}>
+        #✋ <span style={{color:"red"}}>«user» «pass»</span>
+    </span>:null;
+}
+
+export function CreacionDeLaInstancia(props:{states:NuestrosStates}){
+    return <Seccion states={props.states} para={[DEPLOY_INICIAL]}>
+        <Titulo>Creación primera vez</Titulo>
+        <Comandos>
+­            sudo chown $USER /opt/npm
+­            mkdir /opt/npm/$nombre_dir/	
+­            cd /opt/npm/$nombre_dir/
+­            export url_source=$git_host/$git_group/$git_project.git
+­            export nombre_user=$server_user
+­
+­                id -u $nombre_user
+­            #✋ Verificar que no exista el usuario
+­
+­            sudo useradd $nombre_user
+­            sudo adduser $nombre_user runner
+­
+­            #✋ si lo que se quiere es un clon volver al label CLON1
+­            git clone $url_source /opt/npm/$nombre_dir
+­            <GitUserAndPass states={props.states}/>
+­            
+­            sudo ln -s /opt/insts/$nombre_dir.yaml /opt/npm/$nombre_dir/local-config.yaml
+­            npm install
+­            #✋ si tiene .tabs externos agregarlos 
+­            npm start -- --dump-db
+­            sudo -u postgres psql {'<'} local-db-dump-create-db.sql
+­            sudo -u postgres psql -v ON_ERROR_STOP=on --quiet --single-transaction --pset pager=off --file local-db-dump.sql $db_database
+­                 # psql --host=$db_host --port=$db_port --username=$db_user --no-password -v ON_ERROR_STOP=on --quiet --single-transaction --pset pager=off --file local-db-dump.sql $db_database
+­            #✋ !esperar y borrar .tabs externos
+
+        </Comandos>
+        <Aclaracion>
+        </Aclaracion>
+    </Seccion>
+}
+
+export function Mantenimiento(props:{states:NuestrosStates}){
+    return <Seccion states={props.states} para={[ACTUALIZACION]}>
+        <Titulo>Mantenimiento (cada vez que se actualiza la versión)</Titulo>
+        <Comandos>
+­            cd /opt/npm/$nombre_dir/
+­            sudo chown -R $USER .
+­
+­            git pull
+­            <GitUserAndPass states={props.states}/>
+­            
+­            #✋el install hay que hacerlo siempre para que haga el build, el rm es para las instalaciones estándar
+­            #recomendado: rm -r dist
+­            npm install
+­
+        </Comandos>
+        <Aclaracion>
+        </Aclaracion>
+    </Seccion>
+}
+
 function Pie(){
     return <div className="pie"></div>
 }
 
 export function Operaciones(){
     const states = {
-        numModo: React.useState(0)
+        numModo: React.useState(0),
+        privateRepo: React.useState(true)
     }
     return <div className="doc-operaciones">
         <h1>Operaciones bp</h1>
         <ModoVisualizacion states={states}/>
         <CreacionDelArchivoDeConfiguracion states={states}/>
         <LecturaDelArchivoDeConfiguracion states={states}/>
+        <CreacionDeLaInstancia states={states}/>
+        <Mantenimiento states={states}/>
         <Pie/>
     </div>
 }
