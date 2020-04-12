@@ -35,10 +35,12 @@ module.exports = {
     // This is important because it allows us to avoid bundling all of our
     // dependencies, which allows browsers to cache those libraries between builds.
     externals: {
+        "like-ar": "likeAr",
         "react": "React",
         "react-dom": "ReactDOM",
         "@material-ui/core": "MaterialUI",
         "react-redux": "ReactRedux",
-        "redux-thunk": "ReduxThunk"
+        "redux-thunk": "ReduxThunk",
+        "redux-typed-reducer": "ReduxTypedReducer"
     }
 };

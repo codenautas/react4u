@@ -13,6 +13,22 @@
         <div id="main_layout"></div>
 
         <!-- Dependencies -->
+        <script src="./node_modules/like-ar/like-ar.js"></script>
+        <script>
+            if(typeof module === "undefined" && typeof require === "undefined"){
+                window.exports = {}
+                window.module = {exports:window.exports}
+                window.require = () => window.likeAr;
+            }else{
+                alert('este ejemplo solo funciona si typeof module y require === undefined es este lugar');
+            }
+        </script>
+        <script src="./node_modules/redux-typed-reducer/dist/redux-typed-reducer.js"></script>
+        <script>
+            window.ReduxTypedReducer = window.module.exports;
+            delete window.module;
+            delete window.exports;
+        </script>
         <script src="./node_modules/react/umd/react.development.js"></script>
         <script src="./node_modules/react-dom/umd/react-dom.development.js"></script>
         <script src="./node_modules/@material-ui/core/umd/material-ui.development.js"></script>

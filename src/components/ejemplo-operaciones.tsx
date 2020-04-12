@@ -1,43 +1,91 @@
+import * as likeAr from "like-ar";
 import * as React from "react";
 
+import { createReducer, createDispatchers, ActionsFrom } from "redux-typed-reducer";
 import {
-    Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, 
+    Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, 
     Grid,
     MenuItem,
     Select, Switch
 } from '@material-ui/core';
+import { createStore } from "redux";
+import { Provider, useDispatch, useSelector } from "react-redux"; 
 
-const DEPLOY_INICIAL=Symbol();
-const ACTUALIZACION=Symbol();
+enum MV {
+    REVISION, 
+    DEPLOY_INICIAL, 
+    ACTUALIZACION, 
+    CAMBIO_CONFIG
+};
 
-const ModosVisualizacion = [
-    {
+type ModoVisualizacion={
+    nombre:string
+    descripcion:string
+    mostrarTodo?:boolean
+}
+const ModosVisualizacion:{[k in MV]:ModoVisualizacion} = {
+    [MV.REVISION]:{
         nombre:'revisión del documento', 
         descripcion:`todas las secciones están igual de iluminadas, 
             eligiendo otros modos se pueden destacar las secciones según la operación que se desea`,
         mostrarTodo:true
     },
-    {
+    [MV.DEPLOY_INICIAL]:{
         nombre:'deploy inicial', 
-        codigo:DEPLOY_INICIAL,
         descripcion:`se instala una aplicación por primera vez`
     },
-    {
+    [MV.ACTUALIZACION]:{
         nombre:'actualización de versión', 
-        codigo:ACTUALIZACION,
         descripcion:`se actualiza la versión de una aplicación ya instalada`
+    },
+    [MV.CAMBIO_CONFIG]:{
+        nombre:'cambio de configuración', 
+        descripcion:`se cambia la configuración de la instancia, el puerto, la dirección URL, la ubicación o nombre de la base de datos, etc...`
     }
-]
+};
+
+type EstadoDoc = {
+    modos:{[k in MV ]:boolean},
+    privateRepo:boolean,
+    mostrarTodo:boolean
+}
+
+var reducers={
+    SET_PRIVATE: (payload: {privateRepo:boolean}) => 
+        function(estado: EstadoDoc){
+            return {
+                ...estado,
+                privateRepo: payload.privateRepo
+            }
+        },
+    SET_MODE: (payload: {modo:MV, value:boolean}) => 
+        function(estado: EstadoDoc){
+            return {
+                ...estado,
+                modos: {
+                    ...estado.modos,
+                    [payload.modo]:payload.value
+                }
+            }
+        },
+}
+
+const docReducer = createReducer(reducers, {
+    modos:{}
+});
+const store = createStore(docReducer/*, loadState()*/); 
+const dispatchers = createDispatchers(reducers);
 
 function CrearDivConClase(attrs:{nombre:string}){
-    return function (props:{children:React.ReactNode, states?:NuestrosStates, para?:Symbol[]}){    
-        const stateProps = ModosVisualizacion[props.states?.numModo?.[0]||0];
-        return stateProps.mostrarTodo || props.para==undefined || stateProps.codigo && props.para.includes(stateProps.codigo)?
+    return function (props:{children:React.ReactNode, para?:MV[]|MV}){
+        const { mostrarTodo, modos } = useSelector((estado:EstadoDoc)=>estado);
+        const para = props.para == undefined ? undefined : props.para instanceof Array ? props.para : [props.para];
+        return mostrarTodo || para==undefined || para.find(modo=>modos[modo])?
             <div className={attrs.nombre}>
-                {props.para && stateProps.mostrarTodo?
+                {para && mostrarTodo?
                     <div className='solo-para'><span className='etiqueta-colgante'>
-                        solo para {props.para.length==1?`el modo`:`los modos`} de visualización:
-                        {props.para.map((s,i)=><span key={i}>{i?',':''} {ModosVisualizacion.find(d=>d.codigo==s)?.nombre} </span>)}
+                        solo para {para.length==1?`el modo`:`los modos`} de visualización:
+                        {para.map((mv:MV,i)=><span key={mv}>{i?',':''} {ModosVisualizacion[mv].nombre} </span>)}
                     </span></div>
                 :null}
                 {props.children}
@@ -102,7 +150,7 @@ function Comandos(props:{children:React.ReactNode, className?:string}){
                     ...lineas.slice(inode || !/^\s*$/.test(lineas[0])?0:2).map(function(part){
                         var parts = part.split(keywordsRegExp);
                         console.log(parts);
-                        var domParts = parts.map((part, i)=>i%2?<Coso coso={part}/>:part);
+                        var domParts = parts.map((part, i)=>i%2?<Coso key={"coso-"+part+i} coso={part}/>:part);
                         console.log(domParts)
                         return domParts;
                     })
@@ -127,32 +175,41 @@ const handleChange = <T extends any>(stateSetter:React.Dispatch<React.SetStateAc
         stateSetter(('checked' in event.target?event.target.checked:event.target.value) as T);
     }
 
-type useStateNumber  = [number , React.Dispatch<React.SetStateAction<number>> ];
-type useStateBoolean = [boolean, React.Dispatch<React.SetStateAction<boolean>>];
-
-type NuestrosStates = {numModo:useStateNumber, privateRepo:useStateBoolean}
-
-function ModoVisualizacion(props:{states:NuestrosStates}){
-    const [numModo, setNumModo] = props.states.numModo;
-    const [privateRepo, setPrivateRepo] = props.states.privateRepo;
+function ModoVisualizacionDocumento(){
+    const { mostrarTodo, modos, privateRepo } = useSelector((estado:EstadoDoc)=>estado);
+    const dispatch = useDispatch();
+    const id="local-id-ModoVisualizacion-";
     return <Seccion>
         <Titulo>
-            Modo de visualización
+            Modo de visualización de este documento
         </Titulo>
-        <Select
-            value={numModo}
-            onChange={handleChange(setNumModo)}
-        >{
-            ModosVisualizacion.map((modo,k)=>
-                <MenuItem value={k} key={k} title={modo.descripcion}>{modo.nombre}</MenuItem>
-            )
-        }</Select>
-        <Aclaracion>{ModosVisualizacion[numModo].descripcion}</Aclaracion>
+        {likeAr(ModosVisualizacion).map((modo,k)=>
+            <div key={k}>
+                <Checkbox
+                    id={id+k}
+                    checked={modos[k]}
+                    onChange={function(event:React.ChangeEvent<HTMLInputElement>){
+                        dispatch(dispatchers.SET_MODE({modo:k, value:event.target.checked}))
+                    }}
+                    inputProps={{ 'aria-label': 'primary checkbox' }}
+                />
+                <label htmlFor={id+k}>
+                    <span className="principal"> {modo.nombre} </span>
+                    <span className="aclaracion"> {modo.descripcion} </span>
+                </label>
+            </div>
+        ).array()}
         <div>
+            <span className="principal"> Repositorio </span>
             <Grid component="label" container alignItems="center" spacing={1}>
                 <Grid item>público</Grid>
                 <Grid item>
-                    <Switch checked={privateRepo} onChange={handleChange(setPrivateRepo)} name="checkedC" />
+                    <Switch 
+                        checked={privateRepo} 
+                        onChange={function(event:React.ChangeEvent<HTMLInputElement>){
+                            dispatch(dispatchers.SET_PRIVATE({privateRepo:event.target.checked}))
+                        }} 
+                    />
                 </Grid>
                 <Grid item>privado</Grid>
             </Grid>
@@ -160,13 +217,14 @@ function ModoVisualizacion(props:{states:NuestrosStates}){
     </Seccion>
 }
 
-function Equivale(props:{states:NuestrosStates, children:React.ReactNode}){
+function Equivale(props:{children:React.ReactNode}){
+    const { mostrarTodo } = useSelector((estado:EstadoDoc)=>estado);
     var [oscurecer, setOscurecer] = React.useState(true);
     return <div className="equivale" doc-oscurecer={oscurecer?'si':'no'}>
         <div className="equivale-titulo"
             onClick={()=>setOscurecer(!oscurecer)}
         >🛈 para verificar</div>
-        {!oscurecer || ModosVisualizacion[props.states.numModo[0]].mostrarTodo?
+        {!oscurecer || mostrarTodo?
             <div className="equivale-cuerpo">
                 {props.children}
             </div>
@@ -174,8 +232,8 @@ function Equivale(props:{states:NuestrosStates, children:React.ReactNode}){
     </div>
 }
 
-export function CreacionDelArchivoDeConfiguracion(props:{states:NuestrosStates}){
-    return <Seccion states={props.states} para={[DEPLOY_INICIAL]}>
+export function CreacionDelArchivoDeConfiguracion(){
+    return <Seccion para={MV.DEPLOY_INICIAL}>
         <Titulo>Creación del archivo de configuración de la instancia</Titulo>
         <Comandos>
 ­            sudo ls -cal /opt/insts
@@ -189,7 +247,7 @@ export function CreacionDelArchivoDeConfiguracion(props:{states:NuestrosStates})
 ­            sudo chown $USER /opt/insts
 ­            . /opt/bin/coderun/script/prepare-inst.sh
         </Comandos>
-        <Equivale states={props.states}>
+        <Equivale>
             <Comandos>
 ­                sudo cat /opt/insts/nombre_instancia.yaml
             </Comandos>
@@ -219,7 +277,7 @@ export function CreacionDelArchivoDeConfiguracion(props:{states:NuestrosStates})
     </Seccion>
 }
 
-export function LecturaDelArchivoDeConfiguracion(props:{states:NuestrosStates}){
+export function LecturaDelArchivoDeConfiguracion(){
     return <Seccion>
         <Titulo>Lectura del archivo de configuración de la instancia</Titulo>
         <Aclaracion>
@@ -243,14 +301,15 @@ export function LecturaDelArchivoDeConfiguracion(props:{states:NuestrosStates}){
     </Seccion>
 }
 
-function GitUserAndPass(props:{states:NuestrosStates}){
-    return props.states.privateRepo[0]?<span title="el repositorio es privado, git pide usuario y clave cada vez." style={{color:"lightgreen"}}>
+function GitUserAndPass(){
+    const { mostrarTodo, privateRepo } = useSelector((estado:EstadoDoc)=>estado);
+    return privateRepo || mostrarTodo?<span title="el repositorio es privado, git pide usuario y clave cada vez." style={{color:"lightgreen"}}>
         #✋ <span style={{color:"red"}}>«user» «pass»</span>
     </span>:null;
 }
 
-export function CreacionDeLaInstancia(props:{states:NuestrosStates}){
-    return <Seccion states={props.states} para={[DEPLOY_INICIAL]}>
+export function CreacionDeLaInstancia(){
+    return <Seccion para={MV.DEPLOY_INICIAL}>
         <Titulo>Creación primera vez</Titulo>
         <Comandos>
 ­            sudo chown $USER /opt/npm
@@ -267,7 +326,7 @@ export function CreacionDeLaInstancia(props:{states:NuestrosStates}){
 ­
 ­            #✋ si lo que se quiere es un clon volver al label CLON1
 ­            git clone $url_source /opt/npm/$nombre_dir
-­            <GitUserAndPass states={props.states}/>
+­            <GitUserAndPass/>
 ­            
 ­            sudo ln -s /opt/insts/$nombre_dir.yaml /opt/npm/$nombre_dir/local-config.yaml
 ­            npm install
@@ -284,15 +343,15 @@ export function CreacionDeLaInstancia(props:{states:NuestrosStates}){
     </Seccion>
 }
 
-export function Mantenimiento(props:{states:NuestrosStates}){
-    return <Seccion states={props.states} para={[ACTUALIZACION]}>
+export function Mantenimiento(){
+    return <Seccion para={MV.ACTUALIZACION}>
         <Titulo>Mantenimiento (cada vez que se actualiza la versión)</Titulo>
         <Comandos>
 ­            cd /opt/npm/$nombre_dir/
 ­            sudo chown -R $USER .
 ­
 ­            git pull
-­            <GitUserAndPass states={props.states}/>
+­            <GitUserAndPass/>
 ­            
 ­            #✋el install hay que hacerlo siempre para que haga el build, el rm es para las instalaciones estándar
 ­            #recomendado: rm -r dist
@@ -314,12 +373,14 @@ export function Operaciones(){
         privateRepo: React.useState(true)
     }
     return <div className="doc-operaciones">
-        <h1>Operaciones bp</h1>
-        <ModoVisualizacion states={states}/>
-        <CreacionDelArchivoDeConfiguracion states={states}/>
-        <LecturaDelArchivoDeConfiguracion states={states}/>
-        <CreacionDeLaInstancia states={states}/>
-        <Mantenimiento states={states}/>
-        <Pie/>
+        <Provider store={store}>
+            <h1>Operaciones bp</h1>
+            <ModoVisualizacionDocumento/>
+            <CreacionDelArchivoDeConfiguracion/>
+            <LecturaDelArchivoDeConfiguracion/>
+            <CreacionDeLaInstancia/>
+            <Mantenimiento/>
+            <Pie/>
+        </Provider>
     </div>
 }

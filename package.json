@@ -23,14 +23,15 @@
     "types.d.ts": "^0.4.14"
   },
   "dependencies": {
-    "@material-ui/core": "~4.9.9",
+    "@material-ui/core": "~4.9.10",
     "@material-ui/icons": "~4.9.1",
-    "ajax-best-promise": "^0.3.7",
-    "best-globals": "^0.10.23",
-    "like-ar": "^0.2.19",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "redux": "^4.0.5",
-    "react-redux": "^7.2.0"
+    "react-redux": "^7.2.0",
+    "ajax-best-promise": "^0.3.7",
+    "best-globals": "^0.10.23",
+    "like-ar": "~0.2.19",
+    "redux-typed-reducer": "~0.1.1"
   }
 }
