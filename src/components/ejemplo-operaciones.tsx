@@ -473,6 +473,12 @@ export function ActualizarNginx(){
     </Seccion>
 }
 
+export function ActualizarServicio() {
+    return <Seccion>
+        <Titulo> Actualizar la configuración del servicio </Titulo>
+    </Seccion>
+}
+
 function Pie(){
     return <div className="pie"></div>
 }
@@ -487,6 +493,7 @@ export function Operaciones(){
             <CreacionDeLaInstancia/>
             <Mantenimiento/>
             <ActualizarNginx/>
+            <ActualizarServicio/>
             <Pie/>
         </Provider>
     </div>
