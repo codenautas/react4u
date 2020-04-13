@@ -171,12 +171,12 @@ function Comandos(props:{children:React.ReactNode, className?:string}){
         {(props.children instanceof Array?props.children:[props.children]).map((node,inode)=>{
             if(typeof node == "string"){
                 if(margen==null){
-                    node.replace(/\u00ad([ ]*)(\S|$)/,function(_,espacios){
+                    node.replace(/[\u00ad↵]([ ]*)(\S|$)/,function(_,espacios){
                         margen = new RegExp('^ {0,'+espacios.length+'}');
                         return '';
                     })
                 }
-                var lineas=node.split(/(\u00ad|\r?\n)/).map(
+                var lineas=node.split(/(\u00ad|↵|\r?\n)/).map(
                     (s,i)=>i%2?'\r\n':(i && margen?s.replace(margen,''):s)
                 );
                 return ([] as (string|JSX.Element)[]).concat(
