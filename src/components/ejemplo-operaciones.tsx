@@ -10,10 +10,24 @@ import {
 } from '@material-ui/core';
 import { createStore } from "redux";
 import { Provider, useDispatch, useSelector } from "react-redux"; 
+import { withStyles } from '@material-ui/core/styles';
+
+const BiColorSwitch = withStyles({
+    switchBase: {
+        color: '#3f51b5',
+        //'&$checked': {
+        //    color: 'violet',
+        //},
+        //'&$checked + $track': {
+        //    backgroundColor: 'yellow',
+        //},
+    },
+    // checked: {},
+    // track: {},
+})(Switch);
 
 enum MV {
-    REVISION, 
-    DEPLOY_INICIAL, 
+    DEPLOY_INICIAL = 101, 
     ACTUALIZACION, 
     CAMBIO_CONFIG
 };
@@ -24,23 +38,17 @@ type ModoVisualizacion={
     mostrarTodo?:boolean
 }
 const ModosVisualizacion:{[k in MV]:ModoVisualizacion} = {
-    [MV.REVISION]:{
-        nombre:'revisión del documento', 
-        descripcion:`todas las secciones están igual de iluminadas, 
-            eligiendo otros modos se pueden destacar las secciones según la operación que se desea`,
-        mostrarTodo:true
-    },
     [MV.DEPLOY_INICIAL]:{
         nombre:'deploy inicial', 
         descripcion:`se instala una aplicación por primera vez`
     },
     [MV.ACTUALIZACION]:{
         nombre:'actualización de versión', 
-        descripcion:`se actualiza la versión de una aplicación ya instalada`
+        descripcion:`de una aplicación ya instalada con este documento (o una versión anterior de este)`
     },
     [MV.CAMBIO_CONFIG]:{
         nombre:'cambio de configuración', 
-        descripcion:`se cambia la configuración de la instancia, el puerto, la dirección URL, la ubicación o nombre de la base de datos, etc...`
+        descripcion:`de la instancia, el puerto, la dirección URL, la ubicación o nombre de la base de datos, etc...`
     }
 };
 
@@ -58,20 +66,47 @@ var reducers={
                 privateRepo: payload.privateRepo
             }
         },
+    SET_MOSTRARTODO: (payload: {mostrarTodo:boolean}) => 
+        function(estado: EstadoDoc){
+            return {
+                ...estado,
+                mostrarTodo: payload.mostrarTodo
+            }
+        },
     SET_MODE: (payload: {modo:MV, value:boolean}) => 
         function(estado: EstadoDoc){
+            /*
             return {
                 ...estado,
                 modos: {
                     ...estado.modos,
                     [payload.modo]:payload.value
                 }
+            };
+            */
+            var modosNuevos={
+                ...estado.modos,
+                [payload.modo]:payload.value
+            }
+            if(payload.value){
+                if(payload.modo==MV.DEPLOY_INICIAL){
+                    modosNuevos[MV.CAMBIO_CONFIG]=false;
+                    modosNuevos[MV.ACTUALIZACION]=false;
+                }else{
+                    modosNuevos[MV.DEPLOY_INICIAL]=false;
+                }
+            }
+            return {
+                ...estado,
+                modos: {...modosNuevos}
             }
         },
 }
 
 const docReducer = createReducer(reducers, {
-    modos:{}
+    mostrarTodo:true,
+    modos:likeAr(ModosVisualizacion).map(modo=>false).plain(),
+    privateRepo:true,
 });
 const store = createStore(docReducer/*, loadState()*/); 
 const dispatchers = createDispatchers(reducers);
@@ -132,10 +167,8 @@ const Titulo     = CrearDivConClase({nombre:'titulo'});
 function Comandos(props:{children:React.ReactNode, className?:string}){
     var margen:RegExp|null=null;
     var lang:string|null=null;
-    console.log(props.children)
     return <div className={props.className||'comandos'}>
         {(props.children instanceof Array?props.children:[props.children]).map((node,inode)=>{
-            console.log(node)
             if(typeof node == "string"){
                 if(margen==null){
                     node.replace(/\u00ad([ ]*)(\S|$)/,function(_,espacios){
@@ -147,11 +180,9 @@ function Comandos(props:{children:React.ReactNode, className?:string}){
                     (s,i)=>i%2?'\r\n':(i && margen?s.replace(margen,''):s)
                 );
                 return ([] as (string|JSX.Element)[]).concat(
-                    ...lineas.slice(inode || !/^\s*$/.test(lineas[0])?0:2).map(function(part){
+                    ...lineas.slice(inode || !/^\s*$/.test(lineas[0])?0:2).map(function(part,ipart){
                         var parts = part.split(keywordsRegExp);
-                        console.log(parts);
-                        var domParts = parts.map((part, i)=>i%2?<Coso key={"coso-"+part+i} coso={part}/>:part);
-                        console.log(domParts)
+                        var domParts = parts.map((part, i)=>i%2?<Coso key={"coso-"+ipart+'-'+inode+'-'+i} coso={part}/>:part);
                         return domParts;
                     })
                 );
@@ -175,36 +206,77 @@ const handleChange = <T extends any>(stateSetter:React.Dispatch<React.SetStateAc
         stateSetter(('checked' in event.target?event.target.checked:event.target.value) as T);
     }
 
+function LineaDeOpcion(props:{
+    modo:ModoVisualizacion, 
+    id:string, 
+    checked:boolean,
+    onChange:(element:HTMLInputElement)=>void,
+    colorAlMostrarTodo?:'primary'
+}){
+    const { mostrarTodo } = useSelector((estado:EstadoDoc)=>estado);
+    const {modo, id, checked} = props;
+    return (
+        <div className="linea-opcion">
+            <div className="linea-opcion-principal">
+                <Checkbox
+                    color={mostrarTodo?props.colorAlMostrarTodo||"secondary":"primary"}
+                    id={id}
+                    checked={checked}
+                    onChange={function(event:React.ChangeEvent<HTMLInputElement>){
+                        props.onChange(event.target);
+                    }}
+                    inputProps={{ 'aria-label': 'primary checkbox' }}
+                />
+                <label htmlFor={id}>
+                    {modo.nombre}
+                </label>
+            </div>
+            <div className="linea-opcion-secundaria">
+                <label htmlFor={id}>
+                    {modo.descripcion}
+                </label>
+            </div>
+        </div>
+    );
+}
+
 function ModoVisualizacionDocumento(){
-    const { mostrarTodo, modos, privateRepo } = useSelector((estado:EstadoDoc)=>estado);
+    const { privateRepo, modos, mostrarTodo } = useSelector((estado:EstadoDoc)=>estado);
     const dispatch = useDispatch();
     const id="local-id-ModoVisualizacion-";
     return <Seccion>
         <Titulo>
             Modo de visualización de este documento
         </Titulo>
+        <LineaDeOpcion
+            modo={{
+                nombre:'revisión del documento', 
+                descripcion:`todas las secciones son visibles`,
+            }}
+            checked={mostrarTodo} 
+            id={id}
+            onChange={function(target:HTMLInputElement){
+                dispatch(dispatchers.SET_MOSTRARTODO({mostrarTodo:target.checked}))
+            }}
+            colorAlMostrarTodo='primary'
+        />
+        <Titulo>
+            Tareas a realizar
+        </Titulo>
         {likeAr(ModosVisualizacion).map((modo,k)=>
-            <div key={k}>
-                <Checkbox
-                    id={id+k}
-                    checked={modos[k]}
-                    onChange={function(event:React.ChangeEvent<HTMLInputElement>){
-                        dispatch(dispatchers.SET_MODE({modo:k, value:event.target.checked}))
-                    }}
-                    inputProps={{ 'aria-label': 'primary checkbox' }}
-                />
-                <label htmlFor={id+k}>
-                    <span className="principal"> {modo.nombre} </span>
-                    <span className="aclaracion"> {modo.descripcion} </span>
-                </label>
-            </div>
+            <LineaDeOpcion 
+                modo={modo} key={k} checked={modos[k]} id={id+k}
+                onChange={function(target:HTMLInputElement){
+                    dispatch(dispatchers.SET_MODE({modo:k, value:target.checked}))
+                }}
+            />
         ).array()}
         <div>
             <span className="principal"> Repositorio </span>
             <Grid component="label" container alignItems="center" spacing={1}>
                 <Grid item>público</Grid>
                 <Grid item>
-                    <Switch 
+                    <BiColorSwitch 
                         checked={privateRepo} 
                         onChange={function(event:React.ChangeEvent<HTMLInputElement>){
                             dispatch(dispatchers.SET_PRIVATE({privateRepo:event.target.checked}))
@@ -368,10 +440,6 @@ function Pie(){
 }
 
 export function Operaciones(){
-    const states = {
-        numModo: React.useState(0),
-        privateRepo: React.useState(true)
-    }
     return <div className="doc-operaciones">
         <Provider store={store}>
             <h1>Operaciones bp</h1>

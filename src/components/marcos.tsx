@@ -49,10 +49,10 @@ export function fetchAndDispatch(url:string, dispatchDataOrError:FetcherFun, typ
         }catch(err){
             try{
                 var details=resp && (resp.statusText || (await resp.text()).substr(0,10));
-                console.log(details);
+                // console.log(details);
                 err.details=details;
             }finally{
-                console.log(err);
+                // console.log(err);
                 dispatchDataOrError({type:'TX_ERROR', payload:err});
             }
         }
@@ -123,7 +123,7 @@ export function Application(props:{children:Children[]}){
     const classes = useStyles();
     const [drawOpened, setDrawOpened] = React.useState(false);
     const locationParts=splitVariables(location.hash);
-    console.log(locationParts);
+    // console.log(locationParts);
     const [selectedPage, setSelectedPage] = useState<string>(
         // @ts-ignore
         locationParts.w ?? 'main'

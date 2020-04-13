@@ -39,6 +39,7 @@ module.exports = {
         "react": "React",
         "react-dom": "ReactDOM",
         "@material-ui/core": "MaterialUI",
+        "@material-ui/core/styles": "MaterialStyles", 
         "react-redux": "ReactRedux",
         "redux-thunk": "ReduxThunk",
         "redux-typed-reducer": "ReduxTypedReducer"

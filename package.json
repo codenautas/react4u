@@ -32,6 +32,7 @@
     "ajax-best-promise": "^0.3.7",
     "best-globals": "^0.10.23",
     "like-ar": "~0.2.19",
+    "material-styles": "~0.0.7",
     "redux-typed-reducer": "~0.1.1"
   }
 }
