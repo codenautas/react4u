@@ -435,6 +435,44 @@ export function Mantenimiento(){
     </Seccion>
 }
 
+export function ActualizarNginx(){
+    return <Seccion>
+        <Titulo>Actualizar la configuración para nginx</Titulo>
+        <Comandos>
+↵            sudo chown $USER /opt/nginx.conf
+↵            sudo touch /opt/nginx.conf/$nombre_dir.conf
+↵            sudo chown $USER /opt/nginx.conf/$nombre_dir.conf
+↵
+↵            . /opt/bin/coderun/script/generate-nginx-inst.sh
+        </Comandos>
+        ✋ Mirar las diferencias (la primera vez dirá: No such file or directory). Esto generó el .conf como si se hubiera tipeado:
+        <Equivale>
+            <Comandos>
+↵                sudo nano /opt/nginx.conf/$nombre_dir.conf
+            </Comandos>
+­            <Contenido>
+↵                location /base_url {'{'}
+↵                    proxy_pass http://localhost:3040/base_url;
+↵                    proxy_http_version 1.1;
+↵                    proxy_set_header Upgrade $http_upgrade;
+↵                    proxy_set_header Connection 'upgrade';
+↵                    proxy_set_header Host $host;
+↵                    proxy_set_header  X-Real-IP $remote_addr;
+↵                    proxy_set_header  X-Forwarded-Proto https;
+↵                    proxy_set_header  X-Forwarded-For $remote_addr;
+↵                    proxy_set_header  X-Forwarded-Host $remote_addr;
+↵                    proxy_cache_bypass $http_upgrade;
+↵                {'}'}
+            </Contenido>
+        </Equivale>
+        <Comandos>
+↵            sudo systemctl restart nginx
+        </Comandos>
+        # ✋ Ver que no se rompa el nginx. Navegando la ip del server a secas (sin el base_url ni puerto). 
+        Para ver errores de Nginx usar comando <Codigo> sudo journalctl -u nginx </Codigo>
+    </Seccion>
+}
+
 function Pie(){
     return <div className="pie"></div>
 }
@@ -448,6 +486,7 @@ export function Operaciones(){
             <LecturaDelArchivoDeConfiguracion/>
             <CreacionDeLaInstancia/>
             <Mantenimiento/>
+            <ActualizarNginx/>
             <Pie/>
         </Provider>
     </div>
