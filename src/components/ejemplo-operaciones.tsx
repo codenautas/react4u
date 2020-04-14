@@ -478,11 +478,10 @@ export function ActualizarServicio() {
         <Titulo> Actualizar la configuración del servicio </Titulo>
         <Comandos> 
 ↵           sudo chown $USER /opt/services
-↵           sudo touch /opt/services/$${"{"}nombre{"}"}_dir
+↵           sudo touch /opt/services/${"{"}nombre{"}"}_dir
 ↵           sudo chown $USER /opt/services/${"{"}nombre{"}"}_dir
-        </Comandos>
-        # ✋ la primera vez podria no existir el archivo
-        <Comandos> 
+↵           # ✋ la primera vez podria no existir el archivo 
+↵
 ↵           . /opt/bin/coderun/script/generate-service-inst.sh       
         </Comandos>
         ✋  Mirar las diferencias (la primera vez dirá: No such file or directory). Esto generó el .conf como si se hubiera tipeado:
@@ -513,6 +512,30 @@ export function ActualizarServicio() {
      </Seccion>
 }
 
+export function RestaurarPermisosOwnersReiniciar() {
+    return <Seccion>
+        <Titulo> Restuarar permisos y owners y reniciar </Titulo>
+        <Comandos>
+↵           echo $server_user
+        </Comandos>
+        ✋ Va existir a partir de coderun 0.1.3 
+        <Comandos> 
+↵              export server_user=$nombre_dir 
+        </Comandos>
+        <Comandos>
+↵           sudo chown root /opt/npm
+↵           sudo chown -R root /opt/nginx.conf
+↵           sudo chown -R root /opt/services
+↵           sudo chown -R root /opt/bin
+↵           sudo chmod +x /opt/bin/coderun/script/run-app.sh
+↵           sudo chown -R ${"{"}server{"}"}_user /opt/npm/$nombre_dir
+↵           sudo systemctl daemon-reload
+↵           sudo systemctl stop $nombre_dir.service
+↵           sudo systemctl restart $nombre_dir.service
+        </Comandos>
+    </Seccion>
+}
+
 function Pie(){
     return <div className="pie"></div>
 }
@@ -528,6 +551,7 @@ export function Operaciones(){
             <Mantenimiento/>
             <ActualizarNginx/>
             <ActualizarServicio/>
+            <RestaurarPermisosOwnersReiniciar/>
             <Pie/>
         </Provider>
     </div>
