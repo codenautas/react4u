@@ -153,8 +153,6 @@ const keywordStyles={
 const keywords:(keyof typeof keywordStyles)[]=Object.keys(keywordStyles);
 const keywordsRegExp = new RegExp(`((?:\\$\\w+|\\b(?:${keywords.join('|')}))\\b)`,'g')
 
-// "algo $algo che sudo che$algo+${pepe}asdf cargo".split(/((?:\$\w+|\b(?:_|$|sudo|nombre_instancia|nombre_instancia\w*))\b)/g)
-
 function Coso(props:{coso:string}){
     // @ts-ignore el tipo de kye está bien porque props.show in styles
     var key:keyof typeof keywordStyles=props.coso in keywordStyles?props.coso:props.coso.startsWith('$')?'$':'_';
@@ -167,6 +165,7 @@ const Titulo     = CrearDivConClase({nombre:'titulo'});
 function Comandos(props:{children:React.ReactNode, className?:string}){
     var margen:RegExp|null=null;
     var lang:string|null=null;
+    var classLine='linea'; 
     return <div className={props.className||'comandos'}>
         {(props.children instanceof Array?props.children:[props.children]).map((node,inode)=>{
             if(typeof node == "string"){
@@ -180,10 +179,13 @@ function Comandos(props:{children:React.ReactNode, className?:string}){
                     (s,i)=>i%2?'\r\n':(i && margen?s.replace(margen,''):s)
                 );
                 return ([] as (string|JSX.Element)[]).concat(
-                    ...lineas.slice(inode || !/^\s*$/.test(lineas[0])?0:2).map(function(part,ipart){
-                        var parts = part.split(keywordsRegExp);
-                        var domParts = parts.map((part, i)=>i%2?<Coso key={"coso-"+ipart+'-'+inode+'-'+i} coso={part}/>:part);
-                        return domParts;
+                    ...lineas.slice(inode || !/^\s*$/.test(lineas[0])?0:2).map(function(line,iLine){
+                        var parts = line.split(keywordsRegExp);
+                        var domParts = parts.map((part, i)=>i%2?<Coso key={'coso-'+iLine+'-'+inode+'-'+i} x-key={'coso-'+iLine+'-'+inode+'-'+i} coso={part}/>:part);
+                        if(iLine){
+                            classLine=typeof domParts[0] == "string" && /^\s*#/.test(domParts[0])?'linea-comentario':'linea';
+                        }
+                        return <span key={'coso-'+iLine+'-'+inode} x-key={'coso-'+iLine+'-'+inode} className={classLine}>{domParts}</span>;
                     })
                 );
             }else{
@@ -355,8 +357,6 @@ export function LecturaDelArchivoDeConfiguracion(){
         <Aclaracion>
             El mantenimiento o el resto de la instalación se basan en leer la configuración del yaml. 
         </Aclaracion>
-
-
         <Comandos>
 ­            sudo ls -cal /opt/insts
 ­
@@ -375,7 +375,7 @@ export function LecturaDelArchivoDeConfiguracion(){
 
 function GitUserAndPass(){
     const { mostrarTodo, privateRepo } = useSelector((estado:EstadoDoc)=>estado);
-    return privateRepo || mostrarTodo?<span title="el repositorio es privado, git pide usuario y clave cada vez." style={{color:"lightgreen"}}>
+    return privateRepo || mostrarTodo?<span title="el repositorio es privado, git pide usuario y clave cada vez." className='linea-comentario'>
         #✋ <span style={{color:"red"}}>«user» «pass»</span>
     </span>:null;
 }
