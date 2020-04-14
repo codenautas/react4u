@@ -210,42 +210,35 @@ const handleChange = <T extends any>(stateSetter:React.Dispatch<React.SetStateAc
 
 function LineaDeOpcion(props:{
     modo:ModoVisualizacion, 
-    id:string, 
     checked:boolean,
     onChange:(element:HTMLInputElement)=>void,
     colorAlMostrarTodo?:'primary'
 }){
     const { mostrarTodo } = useSelector((estado:EstadoDoc)=>estado);
-    const {modo, id, checked} = props;
+    const {modo, checked} = props;
     return (
-        <div className="linea-opcion">
+        <label className="linea-opcion">
             <div className="linea-opcion-principal">
                 <Checkbox
                     color={mostrarTodo?props.colorAlMostrarTodo||"secondary":"primary"}
-                    id={id}
                     checked={checked}
                     onChange={function(event:React.ChangeEvent<HTMLInputElement>){
                         props.onChange(event.target);
                     }}
                     inputProps={{ 'aria-label': 'primary checkbox' }}
                 />
-                <label htmlFor={id}>
-                    {modo.nombre}
-                </label>
+                {modo.nombre}
             </div>
             <div className="linea-opcion-secundaria">
-                <label htmlFor={id}>
-                    {modo.descripcion}
-                </label>
+                {modo.descripcion}
             </div>
-        </div>
+        </label>
     );
 }
 
 function ModoVisualizacionDocumento(){
     const { privateRepo, modos, mostrarTodo } = useSelector((estado:EstadoDoc)=>estado);
     const dispatch = useDispatch();
-    const id="local-id-ModoVisualizacion-";
     return <Seccion>
         <Titulo>
             Modo de visualización de este documento
@@ -256,7 +249,6 @@ function ModoVisualizacionDocumento(){
                 descripcion:`todas las secciones son visibles`,
             }}
             checked={mostrarTodo} 
-            id={id}
             onChange={function(target:HTMLInputElement){
                 dispatch(dispatchers.SET_MOSTRARTODO({mostrarTodo:target.checked}))
             }}
@@ -267,16 +259,16 @@ function ModoVisualizacionDocumento(){
         </Titulo>
         {likeAr(ModosVisualizacion).map((modo,k)=>
             <LineaDeOpcion 
-                modo={modo} key={k} checked={modos[k]} id={id+k}
+                modo={modo} key={k} checked={modos[k]} 
                 onChange={function(target:HTMLInputElement){
                     dispatch(dispatchers.SET_MODE({modo:k, value:target.checked}))
                 }}
             />
         ).array()}
         <div>
-            <span className="principal"> Repositorio </span>
-            <Grid component="label" container alignItems="center" spacing={1}>
-                <Grid item>público</Grid>
+            <Grid className='linea-opcion-principal' component="label" container alignItems="center" spacing={1}>
+                <Grid item>Repositorio: </Grid>
+                <Grid item> público </Grid>
                 <Grid item>
                     <BiColorSwitch 
                         checked={privateRepo} 
@@ -285,7 +277,7 @@ function ModoVisualizacionDocumento(){
                         }} 
                     />
                 </Grid>
-                <Grid item>privado</Grid>
+                <Grid item> privado </Grid>
             </Grid>
         </div>
     </Seccion>
