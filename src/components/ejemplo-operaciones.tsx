@@ -476,7 +476,41 @@ export function ActualizarNginx(){
 export function ActualizarServicio() {
     return <Seccion>
         <Titulo> Actualizar la configuración del servicio </Titulo>
-    </Seccion>
+        <Comandos> 
+↵           sudo chown $USER /opt/services
+↵           sudo touch /opt/services/$${"{"}nombre{"}"}_dir
+↵           sudo chown $USER /opt/services/${"{"}nombre{"}"}_dir
+        </Comandos>
+        # ✋ la primera vez podria no existir el archivo
+        <Comandos> 
+↵           . /opt/bin/coderun/script/generate-service-inst.sh       
+        </Comandos>
+        ✋  Mirar las diferencias (la primera vez dirá: No such file or directory). Esto generó el .conf como si se hubiera tipeado:
+        <Equivale>
+            <Comandos> 
+↵               sudo nano /opt/services/$nombre_dir.service       
+            </Comandos>
+            <Contenido> 
+ ↵              [Unit]
+ ↵              Description=nombre_instancia - node
+ ↵
+ ↵              [Service]
+ ↵              ExecStart=/opt/bin/run-app.sh 
+ ↵              Restart=always
+ ↵              RestartSec=5
+ ↵              WorkingDirectory=/opt/npm/nombre_instancia
+ ↵              User=$server_user
+ ↵
+ ↵              Group=runner
+ ↵              StandardOutput=syslog
+ ↵              StandardError=syslog
+ ↵              SyslogIdentifier=nombre_instancia
+ ↵              [Install]
+ ↵              WantedBy=multi-user.target
+            </Contenido>
+        </Equivale>
+        ✋ Esto es solo la primera vez: sudo systemctl enable /opt/services/$nombre_dir.service
+     </Seccion>
 }
 
 function Pie(){
