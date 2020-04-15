@@ -572,6 +572,62 @@ export function RestaurarPermisosOwnersReiniciar() {
     </Seccion>
 }
 
+export function MantenimientoGeneral() {
+    return <Seccion>
+        <Titulo> Mantenimiento general del servidor y/o debugging  </Titulo>
+    </Seccion>
+}
+
+export function Diagnostico() {
+    return <Seccion>
+        <Titulo>  Diagnosticos </Titulo>
+        # ✋ Para ver si el node está corriendo (el servicio está bien levantado):
+        <Comandos>
+↵           wget -S -O - --proxy=off http://127.0.0.1:3034/ipc2
+↵           wget --proxy=off http://127.0.0.1:3034/ipc2 
+        </Comandos>
+    </Seccion>
+}
+
+export function MasCosas() {
+    return <Seccion>
+        <Titulo> Más cosas </Titulo>
+        <Comandos>
+↵          proxy = proxy.agip.gov.ar:3128
+        </Comandos>
+    </Seccion>
+}
+
+export function PSQL() {
+    return <Seccion>
+        <Titulo> psql </Titulo>
+        <Comandos>
+↵           <b>\l</b>     lista las bases de datos
+        </Comandos>
+    </Seccion>
+}
+
+export function Postgresql() {
+    return <Seccion>
+        <Titulo> Postgresql </Titulo>
+        <Comandos>
+↵           sudo service postgresql reload
+↵           sudo systemctl restart postgresql
+        </Comandos>
+    </Seccion>
+}
+
+export function Apache() {
+    return <Seccion>
+        <Titulo> Apache </Titulo>
+        <Comandos>
+↵           sudo nano /etc/apache2/sites-available/nuestroservidor.com.ar.conf
+↵           sudo nano /etc/php/7.0/apache2/php.ini
+↵           ProxyTimeout 1200
+        </Comandos>
+    </Seccion>
+}
+
 function Pie(){
     return <div className="pie"></div>
 }
@@ -588,6 +644,12 @@ export function Operaciones(){
             <ActualizarNginx/>
             <ActualizarServicio/>
             <RestaurarPermisosOwnersReiniciar/>
+            <MantenimientoGeneral/>
+            <Diagnostico/>
+            <MasCosas/>
+            <PSQL/>
+            <Postgresql/>
+            <Apache/>
             <Pie/>
         </Provider>
     </div>
