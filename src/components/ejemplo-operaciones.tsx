@@ -55,6 +55,7 @@ const ModosVisualizacion:{[k in MV]:ModoVisualizacion} = {
 type EstadoDoc = {
     modos:{[k in MV ]:boolean},
     privateRepo:boolean,
+    conServidorDb:boolean,
     mostrarTodo:boolean
 }
 
@@ -64,6 +65,13 @@ var reducers={
             return {
                 ...estado,
                 privateRepo: payload.privateRepo
+            }
+        },
+    SET_CONSERVIDORDB: (payload: {conServidorDb:boolean}) => 
+        function(estado: EstadoDoc){
+            return {
+                ...estado,
+                conServidorDb: payload.conServidorDb
             }
         },
     SET_MOSTRARTODO: (payload: {mostrarTodo:boolean}) => 
@@ -107,6 +115,7 @@ const docReducer = createReducer(reducers, {
     mostrarTodo:true,
     modos:likeAr(ModosVisualizacion).map(modo=>false).plain(),
     privateRepo:true,
+    conServidorDb:true
 });
 const store = createStore(docReducer/*, loadState()*/); 
 const dispatchers = createDispatchers(reducers);
@@ -161,6 +170,7 @@ function Coso(props:{coso:string}){
 
 const Aclaracion = CrearDivConClase({nombre:'aclaracion'});
 const Seccion    = CrearDivConClase({nombre:'seccion'});
+const Para       = CrearDivConClase({nombre:'para'});
 const Titulo     = CrearDivConClase({nombre:'titulo'});
 function Comandos(props:{children:React.ReactNode, className?:string}){
     var margen:RegExp|null=null;
@@ -236,8 +246,31 @@ function LineaDeOpcion(props:{
     );
 }
 
+function LineaDeSlide(props:{
+    modo:{nombre:string, false:string, true:string}, 
+    checked:boolean,
+    onChange:(element:HTMLInputElement)=>void
+}){
+    return <div>
+        <Grid className='linea-opcion-principal' component="label" container alignItems="center" spacing={1}>
+            <Grid item>{props.modo.nombre}: </Grid>
+            <Grid item> {props.modo.false} </Grid>
+            <Grid item>
+                <BiColorSwitch 
+                    checked={props.checked} 
+                    onChange={function(event:React.ChangeEvent<HTMLInputElement>){
+                        props.onChange(event.target);
+                    }} 
+                />
+            </Grid>
+            <Grid item> {props.modo.true} </Grid>
+        </Grid>
+    </div>
+
+}
+
 function ModoVisualizacionDocumento(){
-    const { privateRepo, modos, mostrarTodo } = useSelector((estado:EstadoDoc)=>estado);
+    const { privateRepo, conServidorDb, modos, mostrarTodo } = useSelector((estado:EstadoDoc)=>estado);
     const dispatch = useDispatch();
     return <Seccion>
         <Titulo>
@@ -265,21 +298,28 @@ function ModoVisualizacionDocumento(){
                 }}
             />
         ).array()}
-        <div>
-            <Grid className='linea-opcion-principal' component="label" container alignItems="center" spacing={1}>
-                <Grid item>Repositorio: </Grid>
-                <Grid item> público </Grid>
-                <Grid item>
-                    <BiColorSwitch 
-                        checked={privateRepo} 
-                        onChange={function(event:React.ChangeEvent<HTMLInputElement>){
-                            dispatch(dispatchers.SET_PRIVATE({privateRepo:event.target.checked}))
-                        }} 
-                    />
-                </Grid>
-                <Grid item> privado </Grid>
-            </Grid>
-        </div>
+        <LineaDeSlide
+            modo={{
+                nombre:'Repositorio',
+                false:'público',
+                true:'privado'
+            }}
+            checked={privateRepo} 
+            onChange={function(element:HTMLInputElement){
+                dispatch(dispatchers.SET_PRIVATE({privateRepo:element.checked}))
+            }} 
+        />
+        <LineaDeSlide
+            modo={{
+                nombre:'Base de datos',
+                false:'local',
+                true:'en otro servidor'
+            }}
+            checked={conServidorDb} 
+            onChange={function(element:HTMLInputElement){
+                dispatch(dispatchers.SET_CONSERVIDORDB({conServidorDb:element.checked}))
+            }} 
+        />
     </Seccion>
 }
 
@@ -396,8 +436,12 @@ export function CreacionDeLaInstancia(){
 ­            npm install
 ­            #✋ si tiene .tabs externos agregarlos 
 ­            npm start -- --dump-db
+        </Comandos>
+        <Comandos>
 ­            sudo -u postgres psql {'<'} local-db-dump-create-db.sql
 ­            sudo -u postgres psql -v ON_ERROR_STOP=on --quiet --single-transaction --pset pager=off --file local-db-dump.sql $db_database
+        </Comandos>
+        <Comandos>
 ­                 # psql --host=$db_host --port=$db_port --username=$db_user --no-password -v ON_ERROR_STOP=on --quiet --single-transaction --pset pager=off --file local-db-dump.sql $db_database
 ­            #✋ !esperar y borrar .tabs externos
 
