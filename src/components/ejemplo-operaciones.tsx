@@ -340,8 +340,8 @@ export function ActualizarServicio() {
         <Titulo> Actualizar la configuración del servicio </Titulo>
         <Comandos> 
 ↵           sudo chown $USER /opt/services
-↵           sudo touch /opt/services/${"{"}nombre_dir{"}"}.service
-↵           sudo chown $USER /opt/services/${"{"}nombre_dir{"}"}.service
+↵           sudo touch /opt/services/$nombre_dir.service
+↵           sudo chown $USER /opt/services/$nombre_dir.service
 ↵           # ✋ la primera vez podria no existir el archivo 
 ↵
 ↵           . /opt/bin/coderun/script/generate-service-inst.sh       
@@ -352,22 +352,22 @@ export function ActualizarServicio() {
 ↵               sudo nano /opt/services/$nombre_dir.service       
             </Comandos>
             <Contenido> 
- ↵              [Unit]
- ↵              Description=nombre_instancia - node
- ↵
- ↵              [Service]
- ↵              ExecStart=/opt/bin/run-app.sh 
- ↵              Restart=always
- ↵              RestartSec=5
- ↵              WorkingDirectory=/opt/npm/nombre_instancia
- ↵              User=$server_user
- ↵
- ↵              Group=runner
- ↵              StandardOutput=syslog
- ↵              StandardError=syslog
- ↵              SyslogIdentifier=nombre_instancia
- ↵              [Install]
- ↵              WantedBy=multi-user.target
+↵               [Unit]
+↵               Description=nombre_instancia - node
+↵ 
+↵               [Service]
+↵               ExecStart=/opt/bin/run-app.sh 
+↵               Restart=always
+↵               RestartSec=5
+↵               WorkingDirectory=/opt/npm/nombre_instancia
+↵               User=$server_user
+↵ 
+↵               Group=runner
+↵               StandardOutput=syslog
+↵               StandardError=syslog
+↵               SyslogIdentifier=nombre_instancia
+↵               [Install]
+↵               WantedBy=multi-user.target
             </Contenido>
         </Equivale>
         <Para  para={MV.DEPLOY_INICIAL}>
@@ -394,7 +394,7 @@ export function RestaurarPermisosOwnersReiniciar() {
 ↵           sudo chown -R root /opt/services
 ↵           sudo chown -R root /opt/bin
 ↵           sudo chmod +x /opt/bin/coderun/script/run-app.sh
-↵           sudo chown -R ${"{"}server{"}"}_user /opt/npm/$nombre_dir
+↵           sudo chown -R $server_user /opt/npm/$nombre_dir
 ↵           sudo systemctl daemon-reload
 ↵           sudo systemctl stop $nombre_dir.service
 ↵           sudo systemctl restart $nombre_dir.service
@@ -404,26 +404,22 @@ export function RestaurarPermisosOwnersReiniciar() {
 
 export function MantenimientoGeneral() {
     return <Seccion>
-        <Titulo> Mantenimiento general del servidor y/o debugging  </Titulo>
+        <h1> Mantenimiento general del servidor y/o debugging  </h1>
     </Seccion>
 }
 
 export function Diagnostico() {
     return <Seccion>
         <Titulo>  Diagnosticos </Titulo>
-        # ✋ Para ver si el node está corriendo (el servicio está bien levantado):
+        Para ver si el node está corriendo (el servicio está bien levantado):
         <Comandos>
 ↵           wget -S -O - --proxy=off http://127.0.0.1:3034/ipc2
 ↵           wget --proxy=off http://127.0.0.1:3034/ipc2 
         </Comandos>
-    </Seccion>
-}
-
-export function MasCosas() {
-    return <Seccion>
-        <Titulo> Más cosas </Titulo>
+        Para ver qué errores está tirando un servicio
         <Comandos>
-↵          proxy = proxy.agip.gov.ar:3128
+↵           sudo journalctl -u nginx
+↵           sudo journalctl -u $nombre_dir
         </Comandos>
     </Seccion>
 }
@@ -466,17 +462,17 @@ export function ClonarInstApp() {
 ↵
 ↵           export nombre_dir=nombre_instancia
 ↵           source /opt/bin/bash-yaml/script/yaml.sh
-↵           create_variables /opt/insts/${"{"}nombre_origen{"}"}.yaml ori_
+↵           create_variables /opt/insts/$nombre_origen.yaml ori_
         </Comandos>
         # ✋ empezar una aplicación nueva y luego volver donde se encuentre el label CLON1
         <Comandos>
 ↵           # ✋ si es solo la base de datos saltear esta parte hasta CLON-DB
-↵           echo /opt/npm/${"{"}nombre_origen{"}"} /opt/npm/${"{"}nombre_dir{"}"}
-↵           sudo cp -r /opt/npm/${"{"}nombre_origen{"}"}/* /opt/npm/${"{"}nombre_dir{"}"}
+↵           echo /opt/npm/$nombre_origen /opt/npm/$nombre_dir
+↵           sudo cp -r /opt/npm/$nombre_origen/* /opt/npm/$nombre_dir
 ↵           sudo rm /opt/npm/$nombre_dir/local-config.yaml
-↵           sudo ln -s /opt/insts/${"{"}nombre_dir{"}"}.yaml /opt/npm/$nombre_dir/local-config.yaml
-↵           sudo chown $USER -R /opt/npm/${"{"}nombre_dir{"}"}
-↵           cd /opt/npm/${"{"}nombre_dir{"}"}
+↵           sudo ln -s /opt/insts/$nombre_dir.yaml /opt/npm/$nombre_dir/local-config.yaml
+↵           sudo chown $USER -R /opt/npm/$nombre_dir
+↵           cd /opt/npm/$nombre_dir
 ↵           npm start -- --dump-db
 ↵           cat local-db-dump-create-db.sql
 ↵           sudo -u postgres psql {'<'} local-db-dump-create-db.sql
@@ -485,9 +481,9 @@ export function ClonarInstApp() {
         <Comandos>
 ↵           touch local-db-clone.sql
 ↵           sudo chown postgres local-db-clone.sql
-↵           sudo -u postgres pg_dump --format plain ${"{"}ori_db_database{"}"} > local-db-clone.sql
-↵           sudo -u postgres sed -e "s/${"{"}ori_install_dump_db_owner{"}"}/${"{"}install_dump_db_owner{"}"}/g ; 
-↵                s/${"{"}ori_db_user{"}"}/${"{"}db_user{"}"}/g " local-db-clone.sql > local-db-cloned.sql
+↵           sudo -u postgres pg_dump --format plain $ori_db_database > local-db-clone.sql
+↵           sudo -u postgres sed -e "s/$ori_install_dump_db_owner/$install_dump_db_owner/g ; 
+↵                s/$ori_db_user/$db_user/g " local-db-clone.sql > local-db-cloned.sql
 ↵           sudo -u postgres psql -v ON_ERROR_STOP=on --quiet --single-transaction --pset 
 ↵                pager=off --file local-db-cloned.sql $db_database
         </Comandos>
@@ -512,13 +508,13 @@ export function EliminarInstalacion() {
 ↵           sudo cp /opt/npm/$nombre_dir/package*.json
 ↵           sudo cp -r /opt/npm/$nombre_dir/local-*/
 ↵           sudo zip -r locals.zip /opt/npm/$nombre_dir/local-* 
-↵           cp /etc/systemd/system/${"{"}nombre_dir{"}"}.service
-↵           sudo cp /opt/nginx.conf/${"{"}nombre_dir{"}"}.conf nginx.conf
-↵           sudo systemctl stop ${"{"}nombre_dir{"}"}.service
-↵           sudo systemctl disable ${"{"}nombre_dir{"}"}.service
-↵           sudo rm /opt/nginx.conf/${"{"}nombre_dir{"}"}.conf
-↵           rem sudo -u postgres psql --command "drop database ${"{"}db_database{"}"}"
-↵           sudo mv /opt/npm/${"{"}nombre_dir{"}"} /opt/trash/${"{"}nombre_dir{"}"}  
+↵           cp /etc/systemd/system/$nombre_dir.service
+↵           sudo cp /opt/nginx.conf/$nombre_dir.conf nginx.conf
+↵           sudo systemctl stop $nombre_dir.service
+↵           sudo systemctl disable $nombre_dir.service
+↵           sudo rm /opt/nginx.conf/$nombre_dir.conf
+↵           rem sudo -u postgres psql --command "drop database $db_database"
+↵           sudo mv /opt/npm/$nombre_dir /opt/trash/$nombre_dir  
 ↵
 ↵           sudo chown root /opt/npm
 ↵           sudo chown -R root /opt/nginx.conf
@@ -550,7 +546,6 @@ export function Operaciones(){
             <RestaurarPermisosOwnersReiniciar/>
             <MantenimientoGeneral/>
             <Diagnostico/>
-            <MasCosas/>
             <PSQL/>
             <Postgresql/>
             <Apache/>
