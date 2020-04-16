@@ -4,7 +4,8 @@ import { useState } from "react";
 
 import { Application, WScreen } from "./components/marcos";
 import { PruebaRelevamientoPrecios } from "./components/ejemplo-precios";
-import { Operaciones } from "./components/ejemplo-operaciones";
+import { Operaciones         } from "./components/ejemplo-operaciones";
+import { OperacionesServidor } from "./components/ejemplo-operaciones-servidor";
 import { ProbarFormularioEncuesta } from "./components/ejemplo-encuesta"
 import { HolaMundo } from "./components/ejemplo-concepto"
 import { RenderDirectJsonApp } from "./components/json-viewer"
@@ -16,8 +17,11 @@ function ExampleApplication(){
         <WScreen page='main' iconSvgPath="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" iconName="EmojiObjects">
             <HolaMundo mensaje="La demo" uno="React4U" dos={1.0} tres={new Date()}/>
         </WScreen>
-        <WScreen page='operaciones' iconName="Assignment">
+        <WScreen page='operaciones' iconName="Assignment" menuLabel="instalar app">
             <Operaciones/>
+        </WScreen>
+        <WScreen page='operaciones_servidor' iconName="Assignment" menuLabel="instalar servidor">
+            <OperacionesServidor/>
         </WScreen>
         <WScreen page='precios' iconName="LocalAtm">
             <PruebaRelevamientoPrecios/>
