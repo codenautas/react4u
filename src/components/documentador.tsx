@@ -67,12 +67,13 @@ export function GeneradorEtiquetasIntervenidas<MV extends number,EstadoDoc exten
         return function (props:{children:React.ReactNode, para?:MV[]|MV}){
             const { mostrarTodo, modos } = useSelector((estado:EstadoDoc)=>estado);
             const para = props.para == undefined ? undefined : props.para instanceof Array ? props.para : [props.para];
-            return mostrarTodo || para==undefined || para.find(modo=>modos[modo])?
-                <div className={attrs.nombre}>
+            const paraEste = para==undefined || para.find(modo=>modos[modo]);
+            return mostrarTodo || paraEste?
+                <div className={attrs.nombre} doc-oscurecer={paraEste?"no":"si"}>
                     {para && mostrarTodo?
                         <div className='solo-para'><span className='etiqueta-colgante'>
                             solo para {para.length==1?`el modo`:`los modos`} de visualización:
-                            {para.map((mv:MV,i)=><span key={mv}>{i?',':''} {ModosVisualizacion[mv].nombre} </span>)}
+                            {para.map((mv:MV,i)=><span key={mv} para-este={modos[mv]?"si":"no"}>{i?',':''} {ModosVisualizacion[mv].nombre}</span>)}
                         </span></div>
                     :null}
                     {props.children}

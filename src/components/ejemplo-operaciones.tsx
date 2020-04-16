@@ -298,7 +298,7 @@ export function Mantenimiento(){
 }
 
 export function ActualizarNginx(){
-    return <Seccion>
+    return <Seccion para={[MV.DEPLOY_INICIAL, MV.CAMBIO_CONFIG]}>
         <Titulo>Actualizar la configuración para nginx</Titulo>
         <Comandos>
 ↵            sudo chown $USER /opt/nginx.conf
@@ -336,12 +336,12 @@ export function ActualizarNginx(){
 }
 
 export function ActualizarServicio() {
-    return <Seccion>
+    return <Seccion para={[MV.DEPLOY_INICIAL, MV.CAMBIO_CONFIG]}>
         <Titulo> Actualizar la configuración del servicio </Titulo>
         <Comandos> 
 ↵           sudo chown $USER /opt/services
-↵           sudo touch /opt/services/${"{"}nombre{"}"}_dir
-↵           sudo chown $USER /opt/services/${"{"}nombre{"}"}_dir
+↵           sudo touch /opt/services/${"{"}nombre_dir{"}"}.service
+↵           sudo chown $USER /opt/services/${"{"}nombre_dir{"}"}.service
 ↵           # ✋ la primera vez podria no existir el archivo 
 ↵
 ↵           . /opt/bin/coderun/script/generate-service-inst.sh       
@@ -370,7 +370,11 @@ export function ActualizarServicio() {
  ↵              WantedBy=multi-user.target
             </Contenido>
         </Equivale>
-        ✋ Esto es solo la primera vez: sudo systemctl enable /opt/services/$nombre_dir.service
+        <Para  para={MV.DEPLOY_INICIAL}>
+            <Comandos>
+                sudo systemctl enable /opt/services/$nombre_dir.service
+            </Comandos>
+        </Para>
      </Seccion>
 }
 
