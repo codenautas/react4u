@@ -628,6 +628,80 @@ export function Apache() {
     </Seccion>
 }
 
+export function ClonarInstApp() {
+    return <Seccion>
+        <Titulo> Clonar una instalación de app a partir de otra </Titulo>
+        <Comandos>
+↵           export nombre_origen=nombre_instancia
+↵
+↵           export nombre_dir=nombre_instancia
+↵           source /opt/bin/bash-yaml/script/yaml.sh
+↵           create_variables /opt/insts/${"{"}nombre_origen{"}"}.yaml ori_
+        </Comandos>
+        # ✋ empezar una aplicación nueva y luego volver donde se encuentre el label CLON1
+        <Comandos>
+↵           # ✋ si es solo la base de datos saltear esta parte hasta CLON-DB
+↵           echo /opt/npm/${"{"}nombre_origen{"}"} /opt/npm/${"{"}nombre_dir{"}"}
+↵           sudo cp -r /opt/npm/${"{"}nombre_origen{"}"}/* /opt/npm/${"{"}nombre_dir{"}"}
+↵           sudo rm /opt/npm/$nombre_dir/local-config.yaml
+↵           sudo ln -s /opt/insts/${"{"}nombre_dir{"}"}.yaml /opt/npm/$nombre_dir/local-config.yaml
+↵           sudo chown $USER -R /opt/npm/${"{"}nombre_dir{"}"}
+↵           cd /opt/npm/${"{"}nombre_dir{"}"}
+↵           npm start -- --dump-db
+↵           cat local-db-dump-create-db.sql
+↵           sudo -u postgres psql {'<'} local-db-dump-create-db.sql
+        </Comandos>
+        # ✋ CLON-DB saltear hasta acá si solo se clona la base de datos
+        <Comandos>
+↵           touch local-db-clone.sql
+↵           sudo chown postgres local-db-clone.sql
+↵           sudo -u postgres pg_dump --format plain ${"{"}ori_db_database{"}"} > local-db-clone.sql
+↵           sudo -u postgres sed -e "s/${"{"}ori_install_dump_db_owner{"}"}/${"{"}install_dump_db_owner{"}"}/g ; 
+↵                s/${"{"}ori_db_user{"}"}/${"{"}db_user{"}"}/g " local-db-clone.sql > local-db-cloned.sql
+↵           sudo -u postgres psql -v ON_ERROR_STOP=on --quiet --single-transaction --pset 
+↵                pager=off --file local-db-cloned.sql $db_database
+        </Comandos>
+    </Seccion>
+}
+
+export function EliminarInstalacion() {
+    return <Seccion>
+        <Titulo> Eliminar una instalación </Titulo>
+        # ✋ Primero ir arriba a leer el archivo de configuración de la instancia
+        <Comandos>
+↵           sudo mkdir /opt/deleted
+↵           sudo mkdir /opt/trash
+↵       </Comandos>
+        <Comandos>
+↵           sudo mkdir /opt/deleted/$nombre_dir
+↵           sudo chown $USER /opt/deleted/$nombre_dir
+↵           cd /opt/deleted/$nombre_dir
+↵           sudo -u postgres pg_dump --format plain --dbname $db_database > before-delete-db.psql
+↵           gzip before-delete-db.psql
+↵           sudo cp /opt/insts/$nombre_dir.yaml local-config.yaml
+↵           sudo cp /opt/npm/$nombre_dir/package*.json
+↵           sudo cp -r /opt/npm/$nombre_dir/local-*/
+↵           sudo zip -r locals.zip /opt/npm/$nombre_dir/local-* 
+↵           cp /etc/systemd/system/${"{"}nombre_dir{"}"}.service
+↵           sudo cp /opt/nginx.conf/${"{"}nombre_dir{"}"}.conf nginx.conf
+↵           sudo systemctl stop ${"{"}nombre_dir{"}"}.service
+↵           sudo systemctl disable ${"{"}nombre_dir{"}"}.service
+↵           sudo rm /opt/nginx.conf/${"{"}nombre_dir{"}"}.conf
+↵           rem sudo -u postgres psql --command "drop database ${"{"}db_database{"}"}"
+↵           sudo mv /opt/npm/${"{"}nombre_dir{"}"} /opt/trash/${"{"}nombre_dir{"}"}  
+↵
+↵           sudo chown root /opt/npm
+↵           sudo chown -R root /opt/nginx.conf
+↵           sudo chown -R root /opt/services
+↵           sudo chown -R root /opt/bin
+↵           sudo chown -R root /opt/deleted/$nombre_dir
+↵           sudo systemctl restart nginx
+↵           sudo systemctl daemon-reload
+↵           sudo systemctl reset-failed
+        </Comandos>
+    </Seccion>
+}
+
 function Pie(){
     return <div className="pie"></div>
 }
@@ -650,6 +724,8 @@ export function Operaciones(){
             <PSQL/>
             <Postgresql/>
             <Apache/>
+            <ClonarInstApp/>
+            <EliminarInstalacion/>
             <Pie/>
         </Provider>
     </div>
