@@ -72,7 +72,7 @@ export function GeneradorEtiquetasIntervenidas<MV extends number,EstadoDoc exten
                 <div className={attrs.nombre} doc-oscurecer={paraEste?"no":"si"}>
                     {para && mostrarTodo?
                         <div className='solo-para'><span className='etiqueta-colgante'>
-                            solo para {para.length==1?`el modo`:`los modos`} de visualización:
+                            solo para:
                             {para.map((mv:MV,i)=><span key={mv} para-este={modos[mv]?"si":"no"}>{i?',':''} {ModosVisualizacion[mv].nombre}</span>)}
                         </span></div>
                     :null}

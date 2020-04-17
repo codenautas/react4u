@@ -263,10 +263,12 @@ export function CreacionDeLaInstancia(){
 ­            #✋ si tiene .tabs externos agregarlos 
 ­            npm start -- --dump-db
         </Comandos>
-        <Comandos>
-­            sudo -u postgres psql {'<'} local-db-dump-create-db.sql
-­            sudo -u postgres psql -v ON_ERROR_STOP=on --quiet --single-transaction --pset pager=off --file local-db-dump.sql $db_database
-        </Comandos>
+        <Para para={[]}>
+            <Comandos>
+­               sudo -u postgres psql {'<'} local-db-dump-create-db.sql
+­               sudo -u postgres psql -v ON_ERROR_STOP=on --quiet --single-transaction --pset pager=off --file local-db-dump.sql $db_database
+            </Comandos>
+        </Para>
         <Comandos>
 ­                 # psql --host=$db_host --port=$db_port --username=$db_user --no-password -v ON_ERROR_STOP=on --quiet --single-transaction --pset pager=off --file local-db-dump.sql $db_database
 ­            #✋ !esperar y borrar .tabs externos
