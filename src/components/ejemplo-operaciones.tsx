@@ -270,9 +270,13 @@ export function CreacionDeLaInstancia(){
             </Comandos>
         </Para>
         <Comandos>
-­                 # psql --host=$db_host --port=$db_port --username=$db_user --no-password -v ON_ERROR_STOP=on --quiet --single-transaction --pset pager=off --file local-db-dump.sql $db_database
-­            #✋ !esperar y borrar .tabs externos
+            # export DB_ADMIN=tu_usuario_admin
+­            psql --host=$db_host --port=$db_port --username=$DB_ADMIN postgres {'<'} local-db-dump-create-db.sql
+­            #✋ <span style={{color:'red'}}>«pass»</span> del usuario administrador de la base remota
+­            psql --host=$db_host --port=$db_port --username=$DB_ADMIN -v ON_ERROR_STOP=on --quiet --single-transaction --pset pager=off --file local-db-dump.sql $db_database
+­            #✋ <span style={{color:'red'}}>«pass»</span> del usuario administrador de la base remota
 
+­            #✋ !esperar y borrar .tabs externos
         </Comandos>
         <Aclaracion>
         </Aclaracion>
@@ -309,7 +313,7 @@ export function ActualizarNginx(){
 ↵
 ↵            . /opt/bin/coderun/script/generate-nginx-inst.sh
         </Comandos>
-        ✋ Mirar las diferencias (la primera vez dirá: No such file or directory). Esto generó el .conf como si se hubiera tipeado:
+        Mirar las diferencias (la primera vez dirá: No such file or directory). Esto generó el .conf como si se hubiera tipeado:
         <Equivale>
             <Comandos>
 ↵                sudo nano /opt/nginx.conf/$nombre_dir.conf
@@ -344,7 +348,7 @@ export function ActualizarServicio() {
 ↵           sudo chown $USER /opt/services
 ↵           sudo touch /opt/services/$nombre_dir.service
 ↵           sudo chown $USER /opt/services/$nombre_dir.service
-↵           # ✋ la primera vez podria no existir el archivo 
+↵           # la primera vez podria no existir el archivo 
 ↵
 ↵           . /opt/bin/coderun/script/generate-service-inst.sh       
         </Comandos>
