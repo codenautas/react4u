@@ -137,7 +137,7 @@ export function Application(props:{children:Children[]}){
         const onHashChange = function (){
             const locationParts=splitVariables(location.hash);
             if(locationParts.w && locationParts.w != selectedPage){
-                setSelectedPage(locationParts.w);
+                setSelectedPage(locationParts.w + '');
             }
         };
         window.addEventListener('hashchange', onHashChange);

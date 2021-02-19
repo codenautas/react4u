@@ -182,7 +182,7 @@ function adaptAtributoDataTypes(attrDataType:AtributoDataTypes):InputTypes{
     return adapter[attrDataType]
 }
 
-function TypedInput<T>(props:{
+const TypedInput = React.memo(function<T>(props:{
     value:T,
     dataType: InputTypes
     onUpdate:OnUpdate<T>, 
@@ -224,7 +224,7 @@ function TypedInput<T>(props:{
             }
         }}/>
     )
-}
+});
 
 const EditableTd = forwardRef(function<T extends any>(props:{
     disabled?:boolean,
@@ -445,6 +445,7 @@ function PreciosRow(props:{
 export function PruebaRelevamientoPrecios(){
     const [dataPrecios, setDataPrecios] = useState(dataPreciosInicial);
     const updateDataPrecio = function updateDataPrecio(dataPrecio:DataPrecio,index:number){
+        // @ts-ignore POR AHORA
         setDataPrecios(deepFreeze([...dataPrecios.slice(0,index), dataPrecio, ...dataPrecios.slice(index+1)]))
     }
     const ref = useRef<HTMLTableElement>(null);

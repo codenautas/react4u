@@ -487,9 +487,9 @@ export function ClonarInstApp() {
         <Comandos>
 ↵           touch local-db-clone.sql
 ↵           sudo chown postgres local-db-clone.sql
-↵           sudo -u postgres pg_dump --format plain $ori_db_database > local-db-clone.sql
+↵           sudo -u postgres pg_dump --format plain $ori_db_database {'>'} local-db-clone.sql
 ↵           sudo -u postgres sed -e "s/$ori_install_dump_db_owner/$install_dump_db_owner/g ; 
-↵                s/$ori_db_user/$db_user/g " local-db-clone.sql > local-db-cloned.sql
+↵                s/$ori_db_user/$db_user/g " local-db-clone.sql {'>'} local-db-cloned.sql
 ↵           sudo -u postgres psql -v ON_ERROR_STOP=on --quiet --single-transaction --pset 
 ↵                pager=off --file local-db-cloned.sql $db_database
         </Comandos>

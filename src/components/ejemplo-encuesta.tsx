@@ -1,12 +1,16 @@
 import * as React from "react";
-import {useState} from "react";
+import {useState, useEffect, useRef} from "react";
 import { createStore } from "redux"
 import { Provider, useSelector, useDispatch } from "react-redux"
-import { Button, TextField, Switch, FormControlLabel } from "@material-ui/core"
+import { TextField, Switch, FormControlLabel } from "@material-ui/core"
 import * as likeAr from "like-ar";
-import { deepFreeze } from "best-globals"
+import { serie } from "best-globals"
 
 /////// ESTRUCTURA
+
+const Button = (props:{children:any})=><button className="btn btn-outline-primary btn-lg">{props.children}</button>
+
+const MODO_RESPUESTAS:'ARR'|'OBJ' = 'OBJ';
 
 type TipoDato='string'|'number'|'opcion';
 
@@ -166,6 +170,13 @@ var estructura:Pregunta[]=[
     ...estructuraMini.map(transformado('C', 'por último')),
 ];
 
+for(var i =1; i<=200; i++){
+    estructura = [
+        ...estructura, 
+        ...estructuraMini.map(transformado('D'+i, 'muchos parte '+i))
+    ]
+}
+
 estructura.forEach(function(pregunta,i){
     pregunta.posicion=i;
 })
@@ -176,11 +187,13 @@ const indexPreguntaOpcion = likeAr(indexPregunta).map(p=>'opciones' in p?likeAr.
 /////// DATOS
 
 var respuestas = likeAr(likeAr.createIndex(estructura,'id')).map(_=>null);
+var respuestasArr = estructura.map(preg=>[preg.id, null] as [string,null]);
 
 ////////// CONTROLADOR: React
 
 type EstadoEncuestas={
     respuestas:{[varName:string]:any},
+    respuestasArr:[varname:string, value:any][],
     preguntaActual:string, // la siguiene a la última respondida
     modoIngresador:boolean,
     modoDebug:boolean,
@@ -188,9 +201,10 @@ type EstadoEncuestas={
 
 const estadoInicial=/*deepFreeze*/({
     respuestas, 
+    respuestasArr, 
     preguntaActual:estructura[0].id,
     modoIngresador:true,
-    modoDebug:true
+    modoDebug:false
 });
 
 const acciones = {
@@ -205,7 +219,11 @@ const acciones = {
     ),
     registrarRespuesta:(params:{pregunta:string, respuesta:any})=>(
         (estadoAnterior:EstadoEncuestas)=>(
-            {...estadoAnterior, respuestas:{...estadoAnterior.respuestas, [params.pregunta]:params.respuesta}}
+            MODO_RESPUESTAS=='ARR'?{
+                ...estadoAnterior, 
+                respuestasArr: estadoAnterior.respuestasArr.map(r => r[0]==params.pregunta? [r[0], params.respuesta] : r)
+            }
+            :{...estadoAnterior, respuestas:{...estadoAnterior.respuestas, [params.pregunta]:params.respuesta}}
         )
     ),
 }
@@ -237,14 +255,14 @@ const store = createStore(reduxEncuestas)
 
 ////////// VISTA
 
-function RowOpciones(props:{opcion:OpcionId, pregunta:PreguntaId}){
+const RowOpciones = React.memo((props:{opcion:OpcionId, pregunta:PreguntaId, valor:any})=>{
     const {opcion, elegida} = useSelector(
         (estado:EstadoEncuestas)=>{
             var laPregunta=indexPregunta[props.pregunta];
             if(laPregunta.tipoDato=='opcion'){
                 return {
                     opcion:indexPreguntaOpcion[props.pregunta]![props.opcion]!,
-                    elegida:props.opcion == estado.respuestas[props.pregunta]
+                    elegida:props.opcion == props.valor
                 }
             }else{
                 throw new Error('error interno desplegando opciones de una pregunta que no tiene opciones')
@@ -280,20 +298,72 @@ function RowOpciones(props:{opcion:OpcionId, pregunta:PreguntaId}){
             <td><Button>{opcion.salto}</Button></td>
         </tr>
     )
-}
+});
 
-function RowPregunta(props:{key:string, preguntaId:string}){
+type OnUpdate<T> = (data:T)=>void
+
+type InputTypes = 'date'|'number'|'tel'|'text';
+
+const TypedInput = React.memo(function<T>(props:{
+    value:T,
+    dataType: InputTypes
+    onUpdate:OnUpdate<T>, 
+    onFocusOut:()=>void, 
+    onWantToMoveForward?:(()=>boolean)|null
+}){
+    var [value, setValue] = useState(props.value);
+    const inputRef = useRef<HTMLInputElement>(null);
+    useEffect(() => {
+        if(inputRef.current != null){
+            inputRef.current.focus();
+        }
+    }, []);
+    // @ts-ignore acá hay un problema con el cambio de tipos
+    var valueString:string = value==null?'':value;
+    return (
+        <input ref={inputRef} value={valueString} type={props.dataType} onChange={(event)=>{
+            // @ts-ignore Tengo que averiguar cómo hacer esto genérico:
+            setValue(event.target.value);
+        }} onBlur={(event)=>{
+            if(value!=props.value){
+                // @ts-ignore Tengo que averiguar cómo hacer esto genérico:
+                props.onUpdate(event.target.value);
+            }
+            props.onFocusOut();
+        }} onMouseOut={()=>{
+            if(document.activeElement!=inputRef.current){
+                props.onFocusOut();
+            }
+        }} onKeyDown={event=>{
+            var tecla = event.charCode || event.which;
+            if((tecla==13 || tecla==9) && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey){
+                if(!(props.onWantToMoveForward && props.onWantToMoveForward())){
+                    if(inputRef.current!=null){
+                        inputRef.current.blur();
+                    }
+                }
+                event.preventDefault();
+            }
+        }}/>
+    )
+});
+
+const RowPregunta = React.memo((props:{key:string, preguntaId:string})=>{
     const estadoPregunta = useSelector((estado:EstadoEncuestas) => 
-        ({modoIngresador:estado.modoIngresador, respuesta:estado.respuestas[props.preguntaId] }
+        ({
+            modoIngresador:estado.modoIngresador, 
+            respuesta:MODO_RESPUESTAS=='ARR'? 
+            estado.respuestasArr.find(r => r[0] == props.preguntaId)?.[1]
+            : estado.respuestas[props.preguntaId] 
+        }
     ));
     const dispatch = useDispatch();
     const pregunta = indexPregunta[props.preguntaId];
-    const changeNumRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
-        const valor = Number(event.currentTarget.value);
+    const changeNumRespuesta = (valorStr:any)=>{
+        const valor = Number(valorStr);
         dispatch(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
     };
-    const changeTextRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
-        const valor = event.currentTarget.value;
+    const changeTextRespuesta = (valor:any)=>{
         dispatch(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
     };
     return (
@@ -312,24 +382,20 @@ function RowPregunta(props:{key:string, preguntaId:string}){
                 :null}
                 {'opciones' in pregunta?
                     <table><tbody>{pregunta.opciones.map(opcion=>
-                        <RowOpciones key={opcion.opcion} opcion={opcion.opcion} pregunta={pregunta.id} />
+                        <RowOpciones key={opcion.opcion} opcion={opcion.opcion} pregunta={pregunta.id} valor={estadoPregunta.respuesta} />
                     )}</tbody></table>
-                :<TextField
-                    id="standard-number"
+                :<TypedInput
                     value={estadoPregunta.respuesta==null?(pregunta.tipoDato=="string"?'':0):estadoPregunta.respuesta}
-                    onChange={pregunta.tipoDato=="string"?changeTextRespuesta:changeNumRespuesta}
-                    type={pregunta.tipoDato=="string"?"text":"number"}
-                    InputLabelProps={{
-                        shrink: true,
-                    }}
-                    margin="normal"
-                    fullWidth={pregunta.tipoDato=="string"}
+                    onUpdate={pregunta.tipoDato=="string"?changeTextRespuesta:changeNumRespuesta}
+                    dataType={pregunta.tipoDato=="string"?"text":"number"}
+                    onFocusOut={()=>{}}
+                    onWantToMoveForward={null}
                 />
                 }
             </td>
         </tr>
     )
-}
+});
 
 function FormularioEncuesta(){
     const estado = useSelector((estado:EstadoEncuestas)=>estado);
@@ -379,9 +445,13 @@ function FormularioEncuesta(){
     </>)
 }
 
+
+//         
+
 export function ProbarFormularioEncuesta(props:{}){
     return (
         <Provider store={store}>
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"></link>            
             <FormularioEncuesta/>
         </Provider>
     );
