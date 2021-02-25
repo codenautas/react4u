@@ -2,13 +2,46 @@ import * as React from "react";
 import {useState, useEffect, useRef} from "react";
 import { createStore } from "redux"
 import { Provider, useSelector, useDispatch } from "react-redux"
-import { TextField, Switch, FormControlLabel } from "@material-ui/core"
+import { Button as ButtonFromMaterialUi, TextField as TextFieldFromMaterialUi, Switch, FormControlLabel } from "@material-ui/core"
 import * as likeAr from "like-ar";
 import { serie } from "best-globals"
 
 /////// ESTRUCTURA
 
-const Button = (props:{children:any})=><button className="btn btn-outline-primary btn-lg">{props.children}</button>
+const ButtonFromBootstrap = (props:{children:any})=><button className="btn btn-outline-primary btn-lg">{props.children}</button>
+
+const TextFieldFromBootstrap = (props:{
+    disabled?:boolean,
+    className?:string,
+    autoFocus?:boolean,
+    fullWidth:boolean
+    inputProps?:any,
+    value:any,
+    type:any,
+    label?:string,
+    error?:boolean,
+    helperText?:string,
+    multiline?:boolean,
+    onChange:(event:any)=>void,
+    onFocus?:(event:any)=>void,
+    onBlur?:(event:any)=>void,
+})=><input
+    disabled={props.disabled}
+    className={props.className}
+    autoFocus={props.autoFocus}
+    value={props.value} 
+    type={props.type}
+    onChange={props.onChange}
+    onFocus={props.onFocus}
+    onBlur={props.onBlur}
+    placeholder={props.label}
+/>;
+
+
+const MODO_WIDGET:'MATERIAL'|'BOOTSTRAP' = 'BOOTSTRAP'
+
+var Button = MODO_WIDGET == 'MATERIAL' ? ButtonFromMaterialUi : ButtonFromBootstrap;
+var TextField = MODO_WIDGET == 'MATERIAL' ? TextFieldFromMaterialUi : TextFieldFromBootstrap;
 
 const MODO_RESPUESTAS:'ARR'|'OBJ' = 'OBJ';
 
@@ -348,7 +381,56 @@ const TypedInput = React.memo(function<T>(props:{
     )
 });
 
-const RowPregunta = React.memo((props:{key:string, preguntaId:string})=>{
+function RowPregunta(props:{key:string, preguntaId:string}){
+    const estadoPregunta = useSelector((estado:EstadoEncuestas) => 
+        ({modoIngresador:estado.modoIngresador, respuesta:estado.respuestas[props.preguntaId] }
+    ));
+    const dispatch = useDispatch();
+    const pregunta = indexPregunta[props.preguntaId];
+    const changeNumRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
+        const valor = Number(event.currentTarget.value);
+        dispatch(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
+    };
+    const changeTextRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
+        const valor = event.currentTarget.value;
+        dispatch(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
+    };
+    return (
+        <tr tipo-pregunta={pregunta.tipoPregunta} pregunta-id={pregunta.id}>
+            <td className="pregunta-id"><div>{pregunta.id}</div>
+                {pregunta.tipoDato=='opcion'?
+                    (estadoPregunta.modoIngresador?<input className="opcion-data-entry" value={estadoPregunta.respuesta||''}
+                        onChange={changeNumRespuesta}
+                    />:null)
+                :null}
+            </td>
+            <td className="pregunta-box">
+                <div className="pregunta-texto">{pregunta.texto}</div>
+                {pregunta.aclaracion?
+                    <div className="pregunta-aclaracion">{pregunta.aclaracion}</div>
+                :null}
+                {'opciones' in pregunta?
+                    <table><tbody>{pregunta.opciones.map(opcion=>
+                        <RowOpciones key={opcion.opcion} opcion={opcion.opcion} pregunta={pregunta.id} valor={estadoPregunta.respuesta} />
+                    )}</tbody></table>
+                :<TextField
+                    id="standard-number"
+                    value={estadoPregunta.respuesta==null?(pregunta.tipoDato=="string"?'':0):estadoPregunta.respuesta}
+                    onChange={pregunta.tipoDato=="string"?changeTextRespuesta:changeNumRespuesta}
+                    type={pregunta.tipoDato=="string"?"text":"number"}
+                    InputLabelProps={{
+                        shrink: true,
+                    }}
+                    margin="normal"
+                    fullWidth={pregunta.tipoDato=="string"}
+                />
+                }
+            </td>
+        </tr>
+    )
+}
+
+const RowPreguntaDePrueba = React.memo((props:{key:string, preguntaId:string})=>{
     const estadoPregunta = useSelector((estado:EstadoEncuestas) => 
         ({
             modoIngresador:estado.modoIngresador, 
