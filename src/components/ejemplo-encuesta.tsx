@@ -442,7 +442,7 @@ const TypedInput = React.memo(function<T>(props:{
 });
 
 function RowPregunta(props:{key:string, preguntaId:string}){
-    var [openConfirm, setOpenConfirm] = useState(false);
+    var [openConfirm, setOpenConfirm] = useState(null);
     const estadoPregunta = useSelector((estado:EstadoEncuestas) => 
         ({modoIngresador:estado.modoIngresador}
     ));
@@ -465,7 +465,7 @@ function RowPregunta(props:{key:string, preguntaId:string}){
                 :null}
                 <br/>
                 <button
-                    onClick={()=>setOpenConfirm(true)}
+                    onClick={(event)=>setOpenConfirm(event.currentTarget)}
                 >[X]</button>
             </td>
             <td className="pregunta-box">
@@ -489,11 +489,12 @@ function RowPregunta(props:{key:string, preguntaId:string}){
                     fullWidth={pregunta.tipoDato=="string"}
                 />
                 }
-                <div
+                <Popover
                     id={"popover-confirmar"}
-                    open={openConfirm}
+                    open={!!openConfirm}
+                    anchorEl={openConfirm}
                     style={{display:openConfirm?'unset':'none'}}
-                    onClose={()=>{setOpenConfirm(false)}}
+                    onClose={()=>{setOpenConfirm(null)}}
                     anchorOrigin={{
                         vertical: 'bottom',
                         horizontal: 'center',
@@ -507,11 +508,11 @@ function RowPregunta(props:{key:string, preguntaId:string}){
                     <div className="confirma-botones">
                         <Button color="secondary" variant="outlined" onClick={()=>{
                             dispatchByPass(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:null}));
-                            setOpenConfirm(false);
+                            setOpenConfirm(null);
                         }}>borrar respuesta</Button>
-                        <Button color="primary" variant="outlined" onClick={()=>setOpenConfirm(false)}>volver sin borrar</Button>
+                        <Button color="primary" variant="outlined" onClick={()=>setOpenConfirm(null)}>volver sin borrar</Button>
                     </div>
-                </div>
+                </Popover>
             </td>
         </tr>
 )
