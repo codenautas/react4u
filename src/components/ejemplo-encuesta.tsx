@@ -307,23 +307,23 @@ const RowOpciones = React.memo((props:{opcion:OpcionId, pregunta:PreguntaId, val
         <tr className='opciones' es-elegida={elegida?"si":"no"} onClick={
             ()=>{
                 dispatch(despacho.registrarRespuesta({pregunta:props.pregunta, respuesta:props.opcion}))
-                if(opcion.salto){
-                    var anchor = document.querySelector(`[pregunta-id=${opcion.salto}]`);
-                }else{
-                    var anchor = document.querySelector(`[pregunta-id=${props.pregunta}]`);
-                    if(anchor){
-                        if(anchor.nextSibling instanceof Element){
-                            anchor=anchor.nextSibling;
-                        }
-                    }
-                }
-                setTimeout(()=>{
-                    if(anchor){
-                        var rect = anchor.getBoundingClientRect();
-                        window.scrollTo({ behavior: 'smooth', top:rect.top+window.scrollY-100});
-                    }
-                }, 100
-                )
+                // if(opcion.salto){
+                //     var anchor = document.querySelector(`[pregunta-id=${opcion.salto}]`);
+                // }else{
+                //     var anchor = document.querySelector(`[pregunta-id=${props.pregunta}]`);
+                //     if(anchor){
+                //         if(anchor.nextSibling instanceof Element){
+                //             anchor=anchor.nextSibling;
+                //         }
+                //     }
+                // }
+                // setTimeout(()=>{
+                //     if(anchor){
+                //         var rect = anchor.getBoundingClientRect();
+                //         window.scrollTo({ behavior: 'smooth', top:rect.top+window.scrollY-100});
+                //     }
+                // }, 100
+                // )
             }
         }>
             <td><Button>{opcion.opcion}</Button></td>
