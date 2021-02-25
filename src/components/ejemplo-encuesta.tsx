@@ -1,17 +1,17 @@
 import * as React from "react";
 import {useState, useEffect, useRef} from "react";
 import { createStore } from "redux"
-import { Provider, useSelector, useDispatch as useDispatchFromRedux } from "react-redux"
-import { Button as ButtonFromMaterialUi, TextField as TextFieldFromMaterialUi, Switch, FormControlLabel } from "@material-ui/core"
+import { Provider, useSelector, useDispatch } from "react-redux"
+import { Button as ButtonFromMaterialUi, TextField as TextFieldFromMaterialUi, Switch, FormControlLabel, Popover } from "@material-ui/core"
 import * as likeAr from "like-ar";
 import { serie } from "best-globals"
 import { Operaciones } from "./ejemplo-operaciones";
 
 /////// ESTRUCTURA
 
-var respuestasByPass:{[k:string]:any}={};
+var respuestasByPass:{[idPregunta:string]:any}={};
 
-var cacheInputs:{[k:string]:{
+var cacheInputs:{[idPregunta:string]:{
     pregunta:HTMLInputElement,
     opciones:{opcion:string, tr:HTMLTableRowElement}[]
 }}={}
@@ -40,28 +40,17 @@ function refreshRespuestas(){
     }
 }
 
-const useDispatchByPass = ()=>{ 
-    return function(payload:{params:{pregunta:string, respuesta:any}, type:string}){
-        var {pregunta, respuesta} = payload.params;
-        console.log(arguments);
-        respuestasByPass[pregunta] = respuesta;
-        refreshRespuestas();
-        /*
-        var elemento = document.querySelector(`[input-pregunta="${pregunta}"]`) as HTMLInputElement;
-        if(elemento){
-            elemento.value = respuesta;
-        }
-        var trOpcion = document.querySelector(`[tr-opcion="${pregunta}-${respuesta}"]`) as HTMLTable£Element;
-        if(trOpcion){
-            trOpcion.setAttribute('es-elegida','si');
-        }
-        */
-    };
+function dispatchByPass(payload:{params:{pregunta:string, respuesta:any}, type:string}){
+    var {pregunta, respuesta} = payload.params;
+    console.log(arguments);
+    respuestasByPass[pregunta] = respuesta;
+    refreshRespuestas();
 }
 
-var useDispatch = useDispatchByPass;
-
-const ButtonFromBootstrap = (props:{children:any})=><button className="btn btn-outline-primary btn-lg">{props.children}</button>
+const ButtonFromBootstrap = ({children, ...others}:{children:any})=>
+    <button {...others} className="btn btn-outline-primary btn-lg">
+        {children}
+    </button>
 
 const TextFieldFromBootstrap = ({
     disabled,
@@ -108,7 +97,7 @@ const TextFieldFromBootstrap = ({
 />;
 
 
-const MODO_WIDGET:'MATERIAL'|'BOOTSTRAP' = 'BOOTSTRAP'
+var MODO_WIDGET:'MATERIAL'|'BOOTSTRAP' = 'BOOTSTRAP'
 
 var Button = MODO_WIDGET == 'MATERIAL' ? ButtonFromMaterialUi : ButtonFromBootstrap;
 var TextField = MODO_WIDGET == 'MATERIAL' ? TextFieldFromMaterialUi : TextFieldFromBootstrap;
@@ -273,11 +262,13 @@ var estructura:Pregunta[]=[
     ...estructuraMini.map(transformado('C', 'por último')),
 ];
 
+if(false){
 for(var i =1; i<=200; i++){
     estructura = [
         ...estructura, 
         ...estructuraMini.map(transformado('D'+i, 'muchos parte '+i))
     ]
+}
 }
 
 estructura.forEach(function(pregunta,i){
@@ -372,11 +363,10 @@ const RowOpciones = React.memo((props:{opcion:OpcionId, pregunta:PreguntaId})=>{
             }
         }
     )
-    const dispatch = useDispatch();
     return (
         <tr className='opciones' tr-opcion={`${props.pregunta}-${props.opcion}`} trs-pregunta={props.pregunta} valor-opcion={props.opcion} onClick={
             ()=>{
-                dispatch(despacho.registrarRespuesta({pregunta:props.pregunta, respuesta:props.opcion}))
+                dispatchByPass(despacho.registrarRespuesta({pregunta:props.pregunta, respuesta:props.opcion}))
                 // if(opcion.salto){
                 //     var anchor = document.querySelector(`[pregunta-id=${opcion.salto}]`);
                 // }else{
@@ -452,18 +442,18 @@ const TypedInput = React.memo(function<T>(props:{
 });
 
 function RowPregunta(props:{key:string, preguntaId:string}){
+    var [openConfirm, setOpenConfirm] = useState(false);
     const estadoPregunta = useSelector((estado:EstadoEncuestas) => 
         ({modoIngresador:estado.modoIngresador}
     ));
-    const dispatch = useDispatch();
     const pregunta = indexPregunta[props.preguntaId];
     const changeNumRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
         const valor = Number(event.currentTarget.value);
-        dispatch(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
+        dispatchByPass(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
     };
     const changeTextRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
         const valor = event.currentTarget.value;
-        dispatch(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
+        dispatchByPass(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
     };
     return (
         <tr tipo-pregunta={pregunta.tipoPregunta} pregunta-id={pregunta.id}>
@@ -473,6 +463,10 @@ function RowPregunta(props:{key:string, preguntaId:string}){
                         onChange={changeNumRespuesta}
                     />:null)
                 :null}
+                <br/>
+                <button
+                    onClick={()=>setOpenConfirm(true)}
+                >[X]</button>
             </td>
             <td className="pregunta-box">
                 <div className="pregunta-texto">{pregunta.texto}</div>
@@ -485,6 +479,7 @@ function RowPregunta(props:{key:string, preguntaId:string}){
                     )}</tbody></table>
                 :<TextField
                     input-pregunta={props.preguntaId}
+                    inputProps={{"input-pregunta": props.preguntaId}}
                     onChange={pregunta.tipoDato=="string"?changeTextRespuesta:changeNumRespuesta}
                     type={pregunta.tipoDato=="string"?"text":"number"}
                     InputLabelProps={{
@@ -494,59 +489,33 @@ function RowPregunta(props:{key:string, preguntaId:string}){
                     fullWidth={pregunta.tipoDato=="string"}
                 />
                 }
+                <div
+                    id={"popover-confirmar"}
+                    open={openConfirm}
+                    style={{display:openConfirm?'unset':'none'}}
+                    onClose={()=>{setOpenConfirm(false)}}
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'center',
+                    }}
+                    transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'left',
+                    }}
+                >   
+                    <p>La pregunta tiene registrada una respuesta que no fue detectada como errónea</p>
+                    <div className="confirma-botones">
+                        <Button color="secondary" variant="outlined" onClick={()=>{
+                            dispatchByPass(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:null}));
+                            setOpenConfirm(false);
+                        }}>borrar respuesta</Button>
+                        <Button color="primary" variant="outlined" onClick={()=>setOpenConfirm(false)}>volver sin borrar</Button>
+                    </div>
+                </div>
             </td>
         </tr>
-    )
+)
 }
-
-const RowPreguntaDePrueba = React.memo((props:{key:string, preguntaId:string})=>{
-    const estadoPregunta = useSelector((estado:EstadoEncuestas) => 
-        ({
-            modoIngresador:estado.modoIngresador, 
-            respuesta:MODO_RESPUESTAS=='ARR'? 
-            estado.respuestasArr.find(r => r[0] == props.preguntaId)?.[1]
-            : estado.respuestas[props.preguntaId] 
-        }
-    ));
-    const dispatch = useDispatch();
-    const pregunta = indexPregunta[props.preguntaId];
-    const changeNumRespuesta = (valorStr:any)=>{
-        const valor = Number(valorStr);
-        dispatch(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
-    };
-    const changeTextRespuesta = (valor:any)=>{
-        dispatch(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
-    };
-    return (
-        <tr tipo-pregunta={pregunta.tipoPregunta} pregunta-id={pregunta.id}>
-            <td className="pregunta-id"><div>{pregunta.id}</div>
-                {pregunta.tipoDato=='opcion'?
-                    (estadoPregunta.modoIngresador?<input className="opcion-data-entry" value={estadoPregunta.respuesta||''}
-                        onChange={changeNumRespuesta}
-                    />:null)
-                :null}
-            </td>
-            <td className="pregunta-box">
-                <div className="pregunta-texto">{pregunta.texto}</div>
-                {pregunta.aclaracion?
-                    <div className="pregunta-aclaracion">{pregunta.aclaracion}</div>
-                :null}
-                {'opciones' in pregunta?
-                    <table><tbody>{pregunta.opciones.map(opcion=>
-                        <RowOpciones key={opcion.opcion} opcion={opcion.opcion} pregunta={pregunta.id}/>
-                    )}</tbody></table>
-                :<TypedInput
-                    value={estadoPregunta.respuesta==null?(pregunta.tipoDato=="string"?'':0):estadoPregunta.respuesta}
-                    onUpdate={pregunta.tipoDato=="string"?changeTextRespuesta:changeNumRespuesta}
-                    dataType={pregunta.tipoDato=="string"?"text":"number"}
-                    onFocusOut={()=>{}}
-                    onWantToMoveForward={null}
-                />
-                }
-            </td>
-        </tr>
-    )
-});
 
 function FormularioEncuesta(){
     const estado = useSelector((estado:EstadoEncuestas)=>estado);
