@@ -1,40 +1,110 @@
 import * as React from "react";
 import {useState, useEffect, useRef} from "react";
 import { createStore } from "redux"
-import { Provider, useSelector, useDispatch } from "react-redux"
+import { Provider, useSelector, useDispatch as useDispatchFromRedux } from "react-redux"
 import { Button as ButtonFromMaterialUi, TextField as TextFieldFromMaterialUi, Switch, FormControlLabel } from "@material-ui/core"
 import * as likeAr from "like-ar";
 import { serie } from "best-globals"
+import { Operaciones } from "./ejemplo-operaciones";
 
 /////// ESTRUCTURA
 
+var respuestasByPass:{[k:string]:any}={};
+
+var cacheInputs:{[k:string]:{
+    pregunta:HTMLInputElement,
+    opciones:{opcion:string, tr:HTMLTableRowElement}[]
+}}={}
+
+function refreshRespuestas(){
+    for(var pregunta in respuestasByPass){
+        var respuesta = respuestasByPass[pregunta];
+        var inputs = cacheInputs[pregunta];
+        if(!inputs){
+            var arrayTr:HTMLTableRowElement[] = Array.prototype.slice.call(document.querySelectorAll(`[trs-pregunta="${pregunta}"]`) ,0);
+            inputs = { 
+                pregunta: document.querySelector(`[input-pregunta="${pregunta}"]`) as HTMLInputElement,
+                opciones: arrayTr.map(tr => ({tr, opcion:tr.getAttribute('valor-opcion')!}))
+            };
+            cacheInputs[pregunta] = inputs;
+        }
+        if( inputs.pregunta.value != respuesta ){
+            inputs.pregunta.value = respuesta;
+        }
+        for(var tropcion of inputs.opciones){
+            var sino = tropcion.opcion == respuesta ? 'si' : 'no';
+            if( tropcion.tr.getAttribute('es-elegida') != sino ){
+                tropcion.tr.setAttribute('es-elegida', sino );
+            }
+        }
+    }
+}
+
+const useDispatchByPass = ()=>{ 
+    return function(payload:{params:{pregunta:string, respuesta:any}, type:string}){
+        var {pregunta, respuesta} = payload.params;
+        console.log(arguments);
+        respuestasByPass[pregunta] = respuesta;
+        refreshRespuestas();
+        /*
+        var elemento = document.querySelector(`[input-pregunta="${pregunta}"]`) as HTMLInputElement;
+        if(elemento){
+            elemento.value = respuesta;
+        }
+        var trOpcion = document.querySelector(`[tr-opcion="${pregunta}-${respuesta}"]`) as HTMLTable£Element;
+        if(trOpcion){
+            trOpcion.setAttribute('es-elegida','si');
+        }
+        */
+    };
+}
+
+var useDispatch = useDispatchByPass;
+
 const ButtonFromBootstrap = (props:{children:any})=><button className="btn btn-outline-primary btn-lg">{props.children}</button>
 
-const TextFieldFromBootstrap = (props:{
+const TextFieldFromBootstrap = ({
+    disabled,
+    className,
+    autoFocus,
+    fullWidth,
+    inputProps,
+    value,
+    type,
+    label,
+    error,
+    helperText,
+    multiline,
+    onChange,
+    onFocus,
+    onBlur,
+    ...other
+}:{
     disabled?:boolean,
     className?:string,
     autoFocus?:boolean,
-    fullWidth:boolean
+    fullWidth?:boolean
     inputProps?:any,
-    value:any,
-    type:any,
+    value?:any,
+    type?:any,
     label?:string,
     error?:boolean,
     helperText?:string,
     multiline?:boolean,
+    "input-pregunta"?:string,
     onChange:(event:any)=>void,
     onFocus?:(event:any)=>void,
-    onBlur?:(event:any)=>void,
+    onBlur?:(event:any)=>void
 })=><input
-    disabled={props.disabled}
-    className={props.className}
-    autoFocus={props.autoFocus}
-    value={props.value} 
-    type={props.type}
-    onChange={props.onChange}
-    onFocus={props.onFocus}
-    onBlur={props.onBlur}
-    placeholder={props.label}
+    input-pregunta={other["input-pregunta"]}
+    disabled={disabled}
+    className={className}
+    autoFocus={autoFocus}
+    type={type}
+    onChange={onChange}
+    onFocus={onFocus}
+    onBlur={onBlur}
+    placeholder={label}
 />;
 
 
@@ -212,6 +282,7 @@ for(var i =1; i<=200; i++){
 
 estructura.forEach(function(pregunta,i){
     pregunta.posicion=i;
+    respuestasByPass[pregunta.id] = i % 2 + 1;
 })
 
 const indexPregunta = likeAr.createIndex(estructura,'id');
@@ -288,14 +359,13 @@ const store = createStore(reduxEncuestas)
 
 ////////// VISTA
 
-const RowOpciones = React.memo((props:{opcion:OpcionId, pregunta:PreguntaId, valor:any})=>{
-    const {opcion, elegida} = useSelector(
+const RowOpciones = React.memo((props:{opcion:OpcionId, pregunta:PreguntaId})=>{
+    const {opcion} = useSelector(
         (estado:EstadoEncuestas)=>{
             var laPregunta=indexPregunta[props.pregunta];
             if(laPregunta.tipoDato=='opcion'){
                 return {
                     opcion:indexPreguntaOpcion[props.pregunta]![props.opcion]!,
-                    elegida:props.opcion == props.valor
                 }
             }else{
                 throw new Error('error interno desplegando opciones de una pregunta que no tiene opciones')
@@ -304,7 +374,7 @@ const RowOpciones = React.memo((props:{opcion:OpcionId, pregunta:PreguntaId, val
     )
     const dispatch = useDispatch();
     return (
-        <tr className='opciones' es-elegida={elegida?"si":"no"} onClick={
+        <tr className='opciones' tr-opcion={`${props.pregunta}-${props.opcion}`} trs-pregunta={props.pregunta} valor-opcion={props.opcion} onClick={
             ()=>{
                 dispatch(despacho.registrarRespuesta({pregunta:props.pregunta, respuesta:props.opcion}))
                 // if(opcion.salto){
@@ -383,7 +453,7 @@ const TypedInput = React.memo(function<T>(props:{
 
 function RowPregunta(props:{key:string, preguntaId:string}){
     const estadoPregunta = useSelector((estado:EstadoEncuestas) => 
-        ({modoIngresador:estado.modoIngresador, respuesta:estado.respuestas[props.preguntaId] }
+        ({modoIngresador:estado.modoIngresador}
     ));
     const dispatch = useDispatch();
     const pregunta = indexPregunta[props.preguntaId];
@@ -399,7 +469,7 @@ function RowPregunta(props:{key:string, preguntaId:string}){
         <tr tipo-pregunta={pregunta.tipoPregunta} pregunta-id={pregunta.id}>
             <td className="pregunta-id"><div>{pregunta.id}</div>
                 {pregunta.tipoDato=='opcion'?
-                    (estadoPregunta.modoIngresador?<input className="opcion-data-entry" value={estadoPregunta.respuesta||''}
+                    (estadoPregunta.modoIngresador?<input input-pregunta={props.preguntaId} className="opcion-data-entry" 
                         onChange={changeNumRespuesta}
                     />:null)
                 :null}
@@ -411,11 +481,10 @@ function RowPregunta(props:{key:string, preguntaId:string}){
                 :null}
                 {'opciones' in pregunta?
                     <table><tbody>{pregunta.opciones.map(opcion=>
-                        <RowOpciones key={opcion.opcion} opcion={opcion.opcion} pregunta={pregunta.id} valor={estadoPregunta.respuesta} />
+                        <RowOpciones key={opcion.opcion} opcion={opcion.opcion} pregunta={pregunta.id}/>
                     )}</tbody></table>
                 :<TextField
-                    id="standard-number"
-                    value={estadoPregunta.respuesta==null?(pregunta.tipoDato=="string"?'':0):estadoPregunta.respuesta}
+                    input-pregunta={props.preguntaId}
                     onChange={pregunta.tipoDato=="string"?changeTextRespuesta:changeNumRespuesta}
                     type={pregunta.tipoDato=="string"?"text":"number"}
                     InputLabelProps={{
@@ -464,7 +533,7 @@ const RowPreguntaDePrueba = React.memo((props:{key:string, preguntaId:string})=>
                 :null}
                 {'opciones' in pregunta?
                     <table><tbody>{pregunta.opciones.map(opcion=>
-                        <RowOpciones key={opcion.opcion} opcion={opcion.opcion} pregunta={pregunta.id} valor={estadoPregunta.respuesta} />
+                        <RowOpciones key={opcion.opcion} opcion={opcion.opcion} pregunta={pregunta.id}/>
                     )}</tbody></table>
                 :<TypedInput
                     value={estadoPregunta.respuesta==null?(pregunta.tipoDato=="string"?'':0):estadoPregunta.respuesta}
@@ -531,9 +600,12 @@ function FormularioEncuesta(){
 //         
 
 export function ProbarFormularioEncuesta(props:{}){
+    useEffect(()=>{
+        refreshRespuestas();
+    })
     return (
         <Provider store={store}>
-            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous"></link>            
+            <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossOrigin="anonymous"></link>            
             <FormularioEncuesta/>
         </Provider>
     );
