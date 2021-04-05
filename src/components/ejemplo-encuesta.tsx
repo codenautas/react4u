@@ -28,7 +28,7 @@ function refreshRespuestas(){
             };
             cacheInputs[pregunta] = inputs;
         }
-        if( inputs.pregunta.value != respuesta ){
+        if( inputs.pregunta && inputs.pregunta.value != respuesta ){
             inputs.pregunta.value = respuesta;
         }
         for(var tropcion of inputs.opciones){
@@ -262,7 +262,7 @@ var estructura:Pregunta[]=[
     ...estructuraMini.map(transformado('C', 'por último')),
 ];
 
-if(false){
+if(true){
 for(var i =1; i<=200; i++){
     estructura = [
         ...estructura, 
@@ -520,6 +520,18 @@ function RowPregunta(props:{key:string, preguntaId:string}){
 
 function FormularioEncuesta(){
     const estado = useSelector((estado:EstadoEncuestas)=>estado);
+    const [verTodo, setVerTodo] = useState(false);
+    useEffect(()=>{
+        var timer:NodeJS.Timeout|null = setTimeout(()=>{
+            setVerTodo(true);
+            timer = null;
+        },2000)
+        return ()=>{
+            if(timer){
+                clearTimeout(timer);
+            }
+        }
+    })
     const dispatch = useDispatch();
     return (<>
         <table className="ejemplo-encuesta">
@@ -548,8 +560,8 @@ function FormularioEncuesta(){
                 />
             </caption>
             <tbody>
-                {estructura.map(pregunta=>
-                    <RowPregunta key={pregunta.id} preguntaId={pregunta.id}/>
+                {estructura.map((pregunta, i)=>
+                    verTodo || i<10?<RowPregunta key={pregunta.id} preguntaId={pregunta.id}/>:null
                 )}
             </tbody>
             <tfoot>
