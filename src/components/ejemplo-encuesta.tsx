@@ -21,12 +21,13 @@ function refreshRespuestas(){
         var respuesta = respuestasByPass[pregunta];
         var inputs = cacheInputs[pregunta];
         if(!inputs){
-            var arrayTr:HTMLTableRowElement[] = Array.prototype.slice.call(document.querySelectorAll(`[trs-pregunta="${pregunta}"]`) ,0);
-            inputs = { 
-                pregunta: document.querySelector(`[input-pregunta="${pregunta}"]`) as HTMLInputElement,
-                opciones: arrayTr.map(tr => ({tr, opcion:tr.getAttribute('valor-opcion')!}))
-            };
+            inputs = {} as unknown as typeof inputs;
             cacheInputs[pregunta] = inputs;
+        }
+        if(!inputs.pregunta || !inputs.opciones){
+            inputs.pregunta = document.querySelector(`[input-pregunta="${pregunta}"]`) as HTMLInputElement;
+            var arrayTr:HTMLTableRowElement[] = Array.prototype.slice.call(document.querySelectorAll(`[trs-pregunta="${pregunta}"]`) ,0);
+            inputs.opciones = arrayTr.map(tr => ({tr, opcion:tr.getAttribute('valor-opcion')!}))
         }
         if( inputs.pregunta && inputs.pregunta.value != respuesta ){
             inputs.pregunta.value = respuesta;
@@ -520,15 +521,14 @@ function RowPregunta(props:{key:string, preguntaId:string}){
 
 function FormularioEncuesta(){
     const estado = useSelector((estado:EstadoEncuestas)=>estado);
-    const [verTodo, setVerTodo] = useState(false);
+    const [verHasta, setVerHasta] = useState(10);
     useEffect(()=>{
-        var timer:NodeJS.Timeout|null = setTimeout(()=>{
-            setVerTodo(true);
-            timer = null;
-        },2000)
+        var timer:NodeJS.Timeout|null = setInterval(()=>{
+            setVerHasta(hasta=>hasta+10);
+        },250)
         return ()=>{
             if(timer){
-                clearTimeout(timer);
+                clearInterval(timer);
             }
         }
     })
@@ -561,7 +561,7 @@ function FormularioEncuesta(){
             </caption>
             <tbody>
                 {estructura.map((pregunta, i)=>
-                    verTodo || i<10?<RowPregunta key={pregunta.id} preguntaId={pregunta.id}/>:null
+                    i < verHasta?<RowPregunta key={pregunta.id} preguntaId={pregunta.id}/>:null
                 )}
             </tbody>
             <tfoot>
