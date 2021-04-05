@@ -9,7 +9,15 @@ import { Operaciones } from "./ejemplo-operaciones";
 
 /////// ESTRUCTURA
 
-var respuestasByPass:{[idPregunta:string]:any}={};
+type ForPk = 'F1'|'F2'|'F3';
+
+var respuestasByPassFor:{
+    [forPk in ForPk]: {[idPregunta:string]:any}
+}={
+    F1:{}, 
+    F2:{}, 
+    F3:{}
+};
 
 var cacheInputs:{[idPregunta:string]:{
     pregunta:HTMLInputElement,
