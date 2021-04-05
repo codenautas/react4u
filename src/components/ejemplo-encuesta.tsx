@@ -521,10 +521,10 @@ function RowPregunta(props:{key:string, preguntaId:string}){
 
 function FormularioEncuesta(){
     const estado = useSelector((estado:EstadoEncuestas)=>estado);
-    const [verHasta, setVerHasta] = useState(10);
+    const [verTodo, setVerTodo] = useState(false);
     useEffect(()=>{
         var timer:NodeJS.Timeout|null = setInterval(()=>{
-            setVerHasta(hasta=>hasta+10);
+            setVerTodo(true);
         },250)
         return ()=>{
             if(timer){
@@ -560,8 +560,9 @@ function FormularioEncuesta(){
                 />
             </caption>
             <tbody>
+                {verTodo?null:<div style={{height:"500px", textAlign:'center', verticalAlign:'middle', width:'100%', position:"fixed", backgroundColor: 'rgba(100,100,100,0.3)', fontSize:'200%'}} >cargando...</div>}
                 {estructura.map((pregunta, i)=>
-                    i < verHasta?<RowPregunta key={pregunta.id} preguntaId={pregunta.id}/>:null
+                    verTodo || i < 10?<RowPregunta key={pregunta.id} preguntaId={pregunta.id}/>:null
                 )}
             </tbody>
             <tfoot>
