@@ -24,9 +24,9 @@ var cacheInputs:{[idPregunta:string]:{
     opciones:{opcion:string, tr:HTMLTableRowElement}[]
 }}={}
 
-function refreshRespuestas(){
-    for(var pregunta in respuestasByPass){
-        var respuesta = respuestasByPass[pregunta];
+function refreshRespuestas(formId:ForPk){
+    for(var pregunta in respuestasByPassFor[formId]){
+        var respuesta = respuestasByPassFor[formId][pregunta];
         var inputs = cacheInputs[pregunta];
         if(!inputs){
             inputs = {} as unknown as typeof inputs;
@@ -49,11 +49,11 @@ function refreshRespuestas(){
     }
 }
 
-function dispatchByPass(payload:{params:{pregunta:string, respuesta:any}, type:string}){
-    var {pregunta, respuesta} = payload.params;
+function dispatchByPass(payload:{params:{pregunta:string, respuesta:any, formId:ForPk}, type:string}){
+    var {pregunta, respuesta, formId} = payload.params;
     console.log(arguments);
-    respuestasByPass[pregunta] = respuesta;
-    refreshRespuestas();
+    respuestasByPassFor[formId][pregunta] = respuesta;
+    refreshRespuestas(formId);
 }
 
 const ButtonFromBootstrap = ({children, ...others}:{children:any})=>
@@ -271,18 +271,20 @@ var estructura:Pregunta[]=[
     ...estructuraMini.map(transformado('C', 'por último')),
 ];
 
-if(true){
-for(var i =1; i<=200; i++){
-    estructura = [
-        ...estructura, 
-        ...estructuraMini.map(transformado('D'+i, 'muchos parte '+i))
-    ]
-}
-}
+//if(true){
+//for(var i =1; i<=200; i++){
+//    estructura = [
+//        ...estructura, 
+//        ...estructuraMini.map(transformado('D'+i, 'muchos parte '+i))
+//    ]
+//}
+//}
 
 estructura.forEach(function(pregunta,i){
     pregunta.posicion=i;
-    respuestasByPass[pregunta.id] = i % 2 + 1;
+    for(let formId in respuestasByPassFor){
+        respuestasByPassFor[formId as ForPk][pregunta.id] = i % 2 + 1;
+    }
 })
 
 const indexPregunta = likeAr.createIndex(estructura,'id');
@@ -296,7 +298,8 @@ var respuestasArr = estructura.map(preg=>[preg.id, null] as [string,null]);
 ////////// CONTROLADOR: React
 
 type EstadoEncuestas={
-    respuestas:{[varName:string]:any},
+    respuestas:{[forPk in ForPk]: {[varName:string]:any}}
+    //respuestas:{[varName:string]:any},
     respuestasArr:[varname:string, value:any][],
     preguntaActual:string, // la siguiene a la última respondida
     modoIngresador:boolean,
@@ -321,13 +324,22 @@ const acciones = {
     proximaPregunta:(params:{pregunta:string})=>(
         (estadoAnterior:EstadoEncuestas)=>({...estadoAnterior, proximaPregunta:params.pregunta})
     ),
-    registrarRespuesta:(params:{pregunta:string, respuesta:any})=>(
+    registrarRespuesta:(params:{pregunta:string, respuesta:any, formId:ForPk})=>(
         (estadoAnterior:EstadoEncuestas)=>(
             MODO_RESPUESTAS=='ARR'?{
                 ...estadoAnterior, 
                 respuestasArr: estadoAnterior.respuestasArr.map(r => r[0]==params.pregunta? [r[0], params.respuesta] : r)
             }
-            :{...estadoAnterior, respuestas:{...estadoAnterior.respuestas, [params.pregunta]:params.respuesta}}
+            :{
+                ...estadoAnterior,
+                respuestas:{
+                    ...estadoAnterior.respuestas,
+                    [params.formId]:{
+                        ...estadoAnterior.respuestas[params.formId],
+                        [params.pregunta]:params.respuesta
+                    }
+                }
+            }
         )
     ),
 }
@@ -359,7 +371,7 @@ const store = createStore(reduxEncuestas)
 
 ////////// VISTA
 
-const RowOpciones = React.memo((props:{opcion:OpcionId, pregunta:PreguntaId})=>{
+const RowOpciones = React.memo((props:{opcion:OpcionId, pregunta:PreguntaId, formId:ForPk})=>{
     const {opcion} = useSelector(
         (estado:EstadoEncuestas)=>{
             var laPregunta=indexPregunta[props.pregunta];
@@ -375,7 +387,7 @@ const RowOpciones = React.memo((props:{opcion:OpcionId, pregunta:PreguntaId})=>{
     return (
         <tr className='opciones' tr-opcion={`${props.pregunta}-${props.opcion}`} trs-pregunta={props.pregunta} valor-opcion={props.opcion} onClick={
             ()=>{
-                dispatchByPass(despacho.registrarRespuesta({pregunta:props.pregunta, respuesta:props.opcion}))
+                dispatchByPass(despacho.registrarRespuesta({pregunta:props.pregunta, respuesta:props.opcion, formId:props.formId}))
                 // if(opcion.salto){
                 //     var anchor = document.querySelector(`[pregunta-id=${opcion.salto}]`);
                 // }else{
@@ -450,7 +462,7 @@ const TypedInput = React.memo(function<T>(props:{
     )
 });
 
-function RowPregunta(props:{key:string, preguntaId:string}){
+function RowPregunta(props:{key:string, preguntaId:string, formId:ForPk}){
     var [openConfirm, setOpenConfirm] = useState(null);
     const estadoPregunta = useSelector((estado:EstadoEncuestas) => 
         ({modoIngresador:estado.modoIngresador}
@@ -458,11 +470,11 @@ function RowPregunta(props:{key:string, preguntaId:string}){
     const pregunta = indexPregunta[props.preguntaId];
     const changeNumRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
         const valor = Number(event.currentTarget.value);
-        dispatchByPass(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
+        dispatchByPass(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor, formId:props.formId}))
     };
     const changeTextRespuesta = (event:React.ChangeEvent<HTMLInputElement>)=>{
         const valor = event.currentTarget.value;
-        dispatchByPass(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor}))
+        dispatchByPass(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:valor, formId:props.formId}))
     };
     return (
         <tr tipo-pregunta={pregunta.tipoPregunta} pregunta-id={pregunta.id}>
@@ -484,7 +496,7 @@ function RowPregunta(props:{key:string, preguntaId:string}){
                 :null}
                 {'opciones' in pregunta?
                     <table><tbody>{pregunta.opciones.map(opcion=>
-                        <RowOpciones key={opcion.opcion} opcion={opcion.opcion} pregunta={pregunta.id}/>
+                        <RowOpciones key={opcion.opcion} opcion={opcion.opcion} pregunta={pregunta.id} formId={props.formId}/>
                     )}</tbody></table>
                 :<TextField
                     input-pregunta={props.preguntaId}
@@ -516,7 +528,7 @@ function RowPregunta(props:{key:string, preguntaId:string}){
                     <p>La pregunta tiene registrada una respuesta que no fue detectada como errónea</p>
                     <div className="confirma-botones">
                         <Button color="secondary" variant="outlined" onClick={()=>{
-                            dispatchByPass(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:null}));
+                            dispatchByPass(despacho.registrarRespuesta({pregunta:props.preguntaId, respuesta:null, formId:props.formId}));
                             setOpenConfirm(null);
                         }}>borrar respuesta</Button>
                         <Button color="primary" variant="outlined" onClick={()=>setOpenConfirm(null)}>volver sin borrar</Button>
@@ -527,12 +539,13 @@ function RowPregunta(props:{key:string, preguntaId:string}){
 )
 }
 
-function FormularioEncuesta(){
+function FormularioEncuesta(props:{formId:ForPk}){
     const estado = useSelector((estado:EstadoEncuestas)=>estado);
     const [verTodo, setVerTodo] = useState(false);
     useEffect(()=>{
         var timer:NodeJS.Timeout|null = setInterval(()=>{
             setVerTodo(true);
+            //refreshRespuestas(props.formId);
         },250)
         return ()=>{
             if(timer){
@@ -542,6 +555,7 @@ function FormularioEncuesta(){
     })
     const dispatch = useDispatch();
     return (<>
+        <h1>Formulario {props.formId}</h1>
         <table className="ejemplo-encuesta">
             <caption>Formulario Encuesta
                 <FormControlLabel
@@ -570,7 +584,7 @@ function FormularioEncuesta(){
             <tbody>
                 {verTodo?null:<div style={{height:"500px", textAlign:'center', verticalAlign:'middle', width:'100%', position:"fixed", backgroundColor: 'rgba(100,100,100,0.3)', fontSize:'200%'}} >cargando...</div>}
                 {estructura.map((pregunta, i)=>
-                    verTodo || i < 10?<RowPregunta key={pregunta.id} preguntaId={pregunta.id}/>:null
+                    verTodo || i < 10?<RowPregunta key={pregunta.id} preguntaId={pregunta.id} formId={props.formId}/>:null
                 )}
             </tbody>
             <tfoot>
@@ -592,12 +606,12 @@ function FormularioEncuesta(){
 
 export function ProbarFormularioEncuesta(props:{}){
     useEffect(()=>{
-        refreshRespuestas();
+        refreshRespuestas("F1");
     })
     return (
         <Provider store={store}>
             <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossOrigin="anonymous"></link>            
-            <FormularioEncuesta/>
+            <FormularioEncuesta formId="F1"/>
         </Provider>
     );
 }
