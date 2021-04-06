@@ -271,14 +271,14 @@ var estructura:Pregunta[]=[
     ...estructuraMini.map(transformado('C', 'por último')),
 ];
 
-//if(true){
-//for(var i =1; i<=200; i++){
-//    estructura = [
-//        ...estructura, 
-//        ...estructuraMini.map(transformado('D'+i, 'muchos parte '+i))
-//    ]
-//}
-//}
+if(true){
+for(var i =1; i<=200; i++){
+    estructura = [
+        ...estructura, 
+        ...estructuraMini.map(transformado('D'+i, 'muchos parte '+i))
+    ]
+}
+}
 
 estructura.forEach(function(pregunta,i){
     pregunta.posicion=i;
@@ -326,7 +326,7 @@ const acciones = {
     ),
     registrarRespuesta:(params:{pregunta:string, respuesta:any, formId:ForPk})=>(
         (estadoAnterior:EstadoEncuestas)=>(
-            MODO_RESPUESTAS=='ARR'?{
+            MODO_RESPUESTAS=='ARR'?{ //TODO: adaptar a estructura de formularios
                 ...estadoAnterior, 
                 respuestasArr: estadoAnterior.respuestasArr.map(r => r[0]==params.pregunta? [r[0], params.respuesta] : r)
             }
@@ -605,13 +605,19 @@ function FormularioEncuesta(props:{formId:ForPk}){
 //         
 
 export function ProbarFormularioEncuesta(props:{}){
+    const [formActual, setFormActual] = useState<ForPk>("F1");
     useEffect(()=>{
-        refreshRespuestas("F1");
-    })
+        refreshRespuestas(formActual);
+    },[formActual])
     return (
         <Provider store={store}>
             <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossOrigin="anonymous"></link>            
-            <FormularioEncuesta formId="F1"/>
+            {likeAr(respuestasByPassFor).map((_elem, formId:ForPk)=>
+                <Button color="secondary" variant="outlined" onClick={()=>{
+                    setFormActual(formId);
+                }}>{formId}</Button>
+            ).array()}
+            <FormularioEncuesta formId={formActual}/>
         </Provider>
     );
 }
