@@ -542,10 +542,14 @@ function RowPregunta(props:{key:string, preguntaId:string, formId:ForPk}){
 function FormularioEncuesta(props:{formId:ForPk}){
     const estado = useSelector((estado:EstadoEncuestas)=>estado);
     const [verTodo, setVerTodo] = useState(false);
+    const [forPkActual, setForPkActual] = useState<ForPk|null>(null);
+    if(forPkActual != props.formId){
+        setVerTodo(false)
+        setForPkActual(props.formId)
+    }
     useEffect(()=>{
         var timer:NodeJS.Timeout|null = setTimeout(()=>{
             setVerTodo(true);
-            //refreshRespuestas(props.formId);
         },250)
         return ()=>{
             if(timer){
@@ -556,9 +560,6 @@ function FormularioEncuesta(props:{formId:ForPk}){
     const dispatch = useDispatch();
     return (<>
         <h1>Formulario {props.formId}</h1>
-        <Button color="secondary" variant="outlined" onClick={()=>{
-            setVerTodo(false)
-        }}>reset ver todo</Button>
         <table className="ejemplo-encuesta">
             <caption>Formulario Encuesta
                 <FormControlLabel
